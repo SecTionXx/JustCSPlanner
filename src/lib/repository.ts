@@ -5,6 +5,7 @@
 import {
   MockJobRepository,
 } from "./mock/repository";
+import { SheetsJobRepository } from "./sheets/google-sheets-repository";
 import type {
   ActivityLog,
   CreateJobInput,
@@ -57,14 +58,13 @@ function resolveBackend(): DataBackend {
 }
 
 /**
- * Factory for the active JobRepository. Currently always returns the mock; the
- * Google Sheets adapter is a later round and will branch on "sheets".
+ * Factory for the active JobRepository. The backend is chosen via DATA_BACKEND:
+ * "sheets" → Google Sheet adapter, anything else → in-memory mock.
  */
 export function getRepository(): JobRepository {
   const backend = resolveBackend();
   if (backend === "sheets") {
-    // TODO(sheets-adapter): return SheetsJobRepository once implemented.
-    // Intentionally falls through to mock until the adapter exists.
+    return new SheetsJobRepository();
   }
   return new MockJobRepository();
 }

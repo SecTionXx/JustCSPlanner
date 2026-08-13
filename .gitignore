@@ -33,3 +33,6 @@ next-env.d.ts
 
 # oh-my-claudecode operational state
 .omc/
+
+# google service account key (local only)
+service-account.json
