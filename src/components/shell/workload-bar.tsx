@@ -10,18 +10,18 @@ export interface WorkloadSegment {
   value: number
 }
 
-const SEGMENT_COLORS: Record<WorkloadKey, string> = {
-  new: "#b6a2f4",
-  in_progress: "#53c99b",
-  done: "#9fd9f5",
-  overdue: "#f28a9d",
+const SEGMENT_CLASSES: Record<WorkloadKey, string> = {
+  new: "bg-status-new",
+  in_progress: "bg-status-progress",
+  done: "bg-status-completed",
+  overdue: "bg-status-blocked",
 }
 
 const LEGEND_LABELS: Record<WorkloadKey, string> = {
-  new: "New",
-  in_progress: "In Progress",
-  done: "Done",
-  overdue: "Overdue",
+  new: "ใหม่",
+  in_progress: "กำลังดำเนินการ",
+  done: "เสร็จแล้ว",
+  overdue: "เกินกำหนด",
 }
 
 export interface WorkloadBarProps {
@@ -42,10 +42,9 @@ export function WorkloadBar({
   return (
     <div
       className={cn(
-        "flex h-[25px] w-full overflow-hidden rounded-[7px]",
+        "flex h-[25px] w-full overflow-hidden rounded-[7px] bg-muted",
         className
       )}
-      style={{ backgroundColor: "#f1f0f5" }}
       role="img"
       aria-label="workload distribution"
     >
@@ -55,11 +54,8 @@ export function WorkloadBar({
             .map((s) => (
               <span
                 key={s.key}
-                className="block h-full"
-                style={{
-                  backgroundColor: SEGMENT_COLORS[s.key],
-                  width: `${(s.value / total) * 100}%`,
-                }}
+                className={cn("block h-full", SEGMENT_CLASSES[s.key])}
+                style={{ width: `${(s.value / total) * 100}%` }}
               />
             ))
         : null}
@@ -80,13 +76,15 @@ export function WorkloadLegend({
   className,
 }: WorkloadLegendProps): React.ReactElement {
   return (
-    <div className={cn("flex flex-wrap gap-2.5 text-[11px] text-[#748094]", className)}>
+    <div className={cn("flex flex-wrap gap-2.5 text-[11px] text-muted-foreground", className)}>
       {keys.map((key) => (
         <span key={key} className="inline-flex items-center">
           <span
             aria-hidden
-            className="mr-1 inline-block size-2 rounded-[3px]"
-            style={{ backgroundColor: SEGMENT_COLORS[key] }}
+            className={cn(
+              "mr-1 inline-block size-2 rounded-[3px]",
+              SEGMENT_CLASSES[key]
+            )}
           />
           {LEGEND_LABELS[key]}
         </span>

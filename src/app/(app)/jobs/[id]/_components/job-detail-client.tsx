@@ -129,7 +129,7 @@ function AddTodoComposer({
   }
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#f0eef5] pt-2">
+    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border pt-2">
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -145,8 +145,8 @@ function AddTodoComposer({
       <select
         value={assignee}
         onChange={(e) => setAssignee(e.target.value)}
-        className="h-8 rounded-md border bg-white px-2 text-[13px]"
-        style={{ borderColor: "var(--border)" }}
+        className="h-8 rounded-md border border-input bg-card px-2 text-[13px]"
+       
         aria-label="มอบหมายให้"
       >
         {team.map((m) => (
@@ -185,7 +185,7 @@ function TodoDeleteButton({
           <button
             type="button"
             aria-label="ลบ To-do"
-            className="ml-1 inline-flex size-5 shrink-0 items-center justify-center rounded-[5px] text-[13px] leading-none text-muted-foreground transition-colors hover:bg-[#fbe7eb] hover:text-[#c43850]"
+            className="ml-1 inline-flex size-5 shrink-0 items-center justify-center rounded-[5px] text-[13px] leading-none text-muted-foreground transition-colors hover:bg-status-blocked-soft hover:text-status-blocked"
           >
             ×
           </button>
@@ -258,8 +258,7 @@ function StatusActionButton({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="หมายเหตุ (ไม่บังคับ)"
-            className="min-h-[80px] w-full rounded-[9px] border bg-white px-3 py-2 text-sm"
-            style={{ borderColor: "var(--border)" }}
+            className="min-h-[80px] w-full rounded-[9px] border border-input bg-card px-3 py-2 text-sm"
           />
           <DialogFooter>
             <Button

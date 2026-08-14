@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -23,7 +24,7 @@ export interface CommentThreadProps {
  */
 export function CommentThread({
   comments,
-  addLabel = "+ เพิ่มคอมเมนต์",
+  addLabel = "เพิ่มคอมเมนต์",
   onAdd,
   className,
 }: CommentThreadProps): React.ReactElement {
@@ -33,9 +34,9 @@ export function CommentThread({
         {comments.map((comment) => (
           <div
             key={comment.id}
-            className="rounded-[9px] bg-[#f8f7fc] px-2.5 py-2.5 text-xs leading-relaxed text-foreground"
+            className="rounded-[9px] bg-muted px-2.5 py-2.5 text-xs leading-relaxed text-foreground"
           >
-            <div className="mb-1 text-[11px] font-bold text-[#6049af]">
+            <div className="mb-1 text-[11px] font-bold text-primary">
               {comment.author} · {comment.time}
             </div>
             <div>{comment.body}</div>
@@ -44,9 +45,11 @@ export function CommentThread({
       </div>
       <Button
         type="button"
+        variant="outline"
         onClick={onAdd}
-        className="mt-2 h-9 w-full rounded-[9px] font-bold"
+        className="mt-2 h-9 w-full rounded-[9px] font-semibold"
       >
+        <Plus aria-hidden className="size-3.5" />
         {addLabel}
       </Button>
     </div>

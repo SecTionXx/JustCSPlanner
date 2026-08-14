@@ -40,11 +40,10 @@ export function PersonaAvatar({
       aria-label={name}
       title={name}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full font-bold leading-none",
+        "inline-flex shrink-0 items-center justify-center rounded-full bg-secondary font-bold leading-none text-secondary-foreground",
         dims,
         className
       )}
-      style={{ backgroundColor: "#e9e3ff", color: "#6345c3" }}
     >
       {initialsOf(name)}
     </span>

@@ -69,7 +69,7 @@ export function QaClient({ currentUser }: QaClientProps): React.ReactElement {
             disabled={pending}
             onClick={() => setQuestion(quick)}
             className="cursor-pointer rounded-[7px] border px-[9px] py-1.5 text-xs leading-none text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ borderColor: "var(--border)" }}
+           
           >
             {quick}
           </button>
@@ -108,7 +108,7 @@ export function QaClient({ currentUser }: QaClientProps): React.ReactElement {
         <p
           role="alert"
           className="rounded-[9px] border bg-white px-3 py-2 text-sm"
-          style={{ borderColor: "var(--border)", color: "var(--destructive)" }}
+          className-add-
         >
           {error}
         </p>
@@ -117,7 +117,7 @@ export function QaClient({ currentUser }: QaClientProps): React.ReactElement {
       {answer ? (
         <div
           className="rounded-[9px] border bg-white px-3 py-3 text-sm whitespace-pre-wrap leading-relaxed text-foreground"
-          style={{ borderColor: "var(--border)" }}
+         
         >
           {answer}
         </div>

@@ -51,7 +51,7 @@ export function AssignFilters({ team }: AssignFiltersProps): React.ReactElement 
         value={currentOwner}
         onChange={(e) => navigate({ owner: e.target.value })}
         className="h-8 rounded-md border bg-white px-2 text-[13px]"
-        style={{ borderColor: "var(--border)" }}
+       
         aria-label="กรองตามเจ้าของงาน"
       >
         <option value="">เจ้าของ: ทั้งหมด</option>
@@ -93,13 +93,10 @@ function FilterChip({
       onClick={onClick}
       className={cn(
         "cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-        active ? "font-bold" : "text-[#657085] hover:bg-[#f5f3fb]",
-      )}
-      style={
         active
-          ? { backgroundColor: "#eeeaff", color: "#5b21b6" }
-          : { backgroundColor: "#f5f3fb" }
-      }
+          ? "bg-primary font-bold text-primary-foreground"
+          : "bg-muted text-muted-foreground hover:bg-secondary",
+      )}
     >
       {children}
     </button>

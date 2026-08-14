@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -18,9 +19,12 @@ export default function AppError({
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-      <span aria-hidden className="text-5xl">
-        ⚠️
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 py-12 text-center">
+      <span
+        aria-hidden
+        className="flex size-14 items-center justify-center rounded-full bg-status-blocked-soft text-status-blocked"
+      >
+        <TriangleAlert className="size-7" />
       </span>
       <h1 className="text-xl font-bold text-foreground">เกิดข้อผิดพลาด</h1>
       <p className="max-w-md text-sm text-muted-foreground">

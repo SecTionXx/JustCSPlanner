@@ -27,15 +27,13 @@ export function NotificationBell({
       href="/notifications"
       aria-label={unreadCount > 0 ? `การแจ้งเตือน (${unreadCount} ยังไม่อ่าน)` : "การแจ้งเตือน"}
       className={cn(
-        "relative flex size-9 items-center justify-center rounded-[9px] text-white transition-colors hover:bg-white/15",
+        "relative flex size-9 items-center justify-center rounded-[9px] text-foreground transition-colors hover:bg-muted",
         className,
       )}
     >
-      <BellIcon className="size-5" />
+      <BellIcon className="size-4" />
       {unreadCount > 0 ? (
-        <span
-          className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-[#c43850] px-1 text-[10px] font-bold leading-[18px] text-white"
-        >
+        <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-[18px] text-white">
           {badge}
         </span>
       ) : null}

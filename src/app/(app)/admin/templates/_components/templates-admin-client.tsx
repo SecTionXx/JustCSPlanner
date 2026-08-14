@@ -44,11 +44,11 @@ function TemplateGroupTable({
   return (
     <section
       className="overflow-hidden rounded-[14px] border bg-white"
-      style={{ borderColor: "var(--border)" }}
+     
     >
       <header
         className="flex items-center justify-between gap-2 border-b px-3 py-2"
-        style={{ borderColor: "var(--border)" }}
+       
       >
         <h2 className="text-sm font-bold text-foreground">{group.label}</h2>
         <span className="text-[11px] text-muted-foreground">
@@ -60,7 +60,7 @@ function TemplateGroupTable({
         <thead>
           <tr
             className="border-b text-left text-[11px] uppercase tracking-wide text-muted-foreground"
-            style={{ borderColor: "var(--border)" }}
+           
           >
             <th className="w-[56px] px-3 py-2 font-semibold">ลำดับ</th>
             <th className="px-3 py-2 font-semibold">ชื่อ To-do</th>
@@ -152,7 +152,7 @@ function TemplateRow({
 
   if (!editing || !canManage) {
     return (
-      <tr className="border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
+      <tr className="border-b last:border-b-0">
         <td className="px-3 py-2 text-muted-foreground">{template.order}</td>
         <td className="px-3 py-2 font-medium text-foreground">{template.todoTitle}</td>
         <td className="px-3 py-2 text-muted-foreground">{template.deadlineOffsetHours}</td>
@@ -187,7 +187,7 @@ function TemplateRow({
   }
 
   return (
-    <tr className="border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
+    <tr className="border-b last:border-b-0">
       <td className="px-3 py-2 text-muted-foreground">{template.order}</td>
       <td className="px-3 py-2">
         <Input
@@ -288,7 +288,7 @@ function AddTemplateRow({
 
   if (!open) {
     return (
-      <tr style={{ borderColor: "var(--border)" }}>
+      <tr>
         <td colSpan={5} className="px-3 py-2">
           <Button
             type="button"
@@ -305,7 +305,7 @@ function AddTemplateRow({
   }
 
   return (
-    <tr className="border-t" style={{ borderColor: "var(--border)" }}>
+    <tr className="border-t">
       <td className="px-3 py-2 text-muted-foreground">{nextOrder}</td>
       <td className="px-3 py-2">
         <Input

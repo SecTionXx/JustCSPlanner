@@ -13,7 +13,7 @@ export default async function ScanPage(): Promise<React.ReactElement> {
     return (
       <>
         <PageHeader title="สแกนเตือน Deadline" subtitle="Scheduled scan" />
-        <div className="px-6 pt-4 pb-8">
+        <div className="pt-4 pb-8">
           <Panel title="ไม่มีสิทธิ์เข้าถึง">
             <p className="py-4 text-center text-sm text-muted-foreground">
               หน้านี้สำหรับ Lead และ Admin เท่านั้น
@@ -44,7 +44,7 @@ export default async function ScanPage(): Promise<React.ReactElement> {
               เตือนด่วนเมื่อ deadline เหลือไม่เกิน 4 ชม.
             </li>
             <li>
-              <strong className="text-foreground">🚨 เลยกำหนด</strong> —
+              <strong className="text-foreground">เลยกำหนด</strong> —
               เตือนเจ้าของงานเมื่อเลย deadline แล้ว
             </li>
             <li>

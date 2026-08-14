@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { AppShell, type NavItem } from "@/components/shell";
+import { AppShell, type SidebarSection } from "@/components/shell";
 import { canViewAdmin } from "@/lib/auth/permissions";
 import { DEV_USERS, getCurrentUser } from "@/lib/auth/current-user";
 import { getRepository } from "@/lib/repository";
@@ -9,22 +9,42 @@ import { getRepository } from "@/lib/repository";
 // request time — never statically cached.
 export const dynamic = "force-dynamic";
 
-const PRIMARY_NAV: NavItem[] = [
-  { icon: "🏠", label: "Dashboard", href: "/" },
-  { icon: "📋", label: "งานของฉัน", href: "/jobs" },
-  { icon: "📦", label: "Job Card", href: "/jobs/new" },
-  { icon: "🚨", label: "งานเสี่ยง", href: "/risk" },
-  { icon: "👥", label: "ทีม CS", href: "/team" },
-  { icon: "✨", label: "ถาม AI", href: "/ai" },
+const PRIMARY_NAV: SidebarSection[] = [
+  {
+    title: "ภาพรวม",
+    items: [
+      { icon: "anchor", label: "แดชบอร์ด", href: "/" },
+      { icon: "clipboard", label: "งานของฉัน", href: "/jobs" },
+      { icon: "triangle-alert", label: "งานเสี่ยง", href: "/risk" },
+      { icon: "bell", label: "การแจ้งเตือน", href: "/notifications" },
+      { icon: "sparkles", label: "ถาม AI", href: "/ai" },
+    ],
+  },
 ];
 
-// Admin/lead-only nav. Appended to PRIMARY_NAV only when canViewAdmin.
-const ADMIN_NAV: NavItem[] = [
-  { icon: "🗂️", label: "จัดสรรงาน", href: "/assign" },
-  { icon: "📊", label: "รายงาน", href: "/reports" },
-  { icon: "📥", label: "กล่องอีเมล", href: "/admin/inbox" },
-  { icon: "👤", label: "จัดการทีม", href: "/admin/team" },
-  { icon: "📝", label: "เทมเพลต", href: "/admin/templates" },
+const TEAM_NAV: SidebarSection[] = [
+  {
+    title: "ทีม",
+    items: [
+      { icon: "users", label: "ทีม CS", href: "/team" },
+      { icon: "git-branch", label: "จัดสรรงาน", href: "/assign" },
+    ],
+  },
+];
+
+// Admin/lead-only section. Appended only when canViewAdmin.
+const ADMIN_NAV: SidebarSection[] = [
+  {
+    title: "แอดมิน",
+    items: [
+      { icon: "bar-chart", label: "รายงาน", href: "/reports" },
+      { icon: "inbox", label: "กล่องอีเมล", href: "/admin/inbox" },
+      { icon: "scan-search", label: "สแกนเตือน Deadline", href: "/admin/scan" },
+      { icon: "user-cog", label: "จัดการทีม", href: "/admin/team" },
+      { icon: "file-stack", label: "เทมเพลต", href: "/admin/templates" },
+      { icon: "send", label: "สรุปประจำวัน", href: "/admin/summary" },
+    ],
+  },
 ];
 
 export default async function AppLayout({
@@ -38,15 +58,17 @@ export default async function AppLayout({
     repo.listNotifications(currentUser.csId, true),
   ]);
   const devUsers = Object.values(DEV_USERS);
-  const nav = canViewAdmin(currentUser)
-    ? [...PRIMARY_NAV, ...ADMIN_NAV]
-    : PRIMARY_NAV;
+  const isAdmin = canViewAdmin(currentUser);
+  const nav = isAdmin
+    ? [...PRIMARY_NAV, ...TEAM_NAV, ...ADMIN_NAV]
+    : [...PRIMARY_NAV, ...TEAM_NAV];
 
   return (
     <AppShell
       currentCsId={currentUser.csId}
       devUsers={devUsers}
       nav={nav}
+      contextLabel="ทีม CS · Freight Operations"
       unreadCount={unread.length}
     >
       {children}

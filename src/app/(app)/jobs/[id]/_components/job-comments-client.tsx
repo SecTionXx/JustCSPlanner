@@ -57,7 +57,7 @@ export function JobCommentsClient({
         autoFocus
         placeholder="พิมพ์คอมเมนต์..."
         className="min-h-[70px] w-full rounded-[9px] border bg-white px-3 py-2 text-sm"
-        style={{ borderColor: "var(--border)" }}
+       
       />
       <div className="flex items-center justify-end gap-2">
         <Button

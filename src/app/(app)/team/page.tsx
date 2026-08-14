@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GitBranch } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,11 +21,17 @@ import { PageHeader, Panel } from "../_components/field";
 
 export const dynamic = "force-dynamic";
 
+const STATUS_PILL_CLASSES: Record<string, string> = {
+  overload: "bg-status-blocked-soft text-status-blocked",
+  watch: "bg-status-needs-help-soft text-status-needs-help",
+  available: "bg-status-completed-soft text-status-completed",
+};
+
 interface WorkloadEntry {
   member: TeamMember;
   segments: WorkloadSegment[];
   total: number;
-  statusPill: { label: string; tone: string };
+  statusPill: { label: string; tone: keyof typeof STATUS_PILL_CLASSES };
 }
 
 function computeWorkload(member: TeamMember, jobs: JobCard[]): WorkloadEntry {
@@ -51,13 +58,13 @@ function computeWorkload(member: TeamMember, jobs: JobCard[]): WorkloadEntry {
   const active = owned.filter((j) => j.status !== "Completed").length;
   const overdueCount = counts.overdue;
 
-  let statusPill: { label: string; tone: string };
+  let statusPill: WorkloadEntry["statusPill"];
   if (overdueCount >= 2) {
-    statusPill = { label: "งานล้น", tone: "#c43850" };
+    statusPill = { label: "งานล้น", tone: "overload" };
   } else if (active >= 4) {
-    statusPill = { label: "ต้องติดตาม", tone: "#d27b1c" };
+    statusPill = { label: "ต้องติดตาม", tone: "watch" };
   } else {
-    statusPill = { label: "รับเพิ่มได้", tone: "#177a55" };
+    statusPill = { label: "รับเพิ่มได้", tone: "available" };
   }
 
   return { member, segments, total, statusPill };
@@ -87,7 +94,7 @@ export default async function TeamPage(): Promise<React.ReactElement> {
   return (
     <>
       <PageHeader
-        title="CS Team Dashboard"
+        title="ทีม CS"
         subtitle="ภาพรวม workload และงานเสี่ยงของทีม CS"
         actions={
           canAssign ? (
@@ -96,27 +103,25 @@ export default async function TeamPage(): Promise<React.ReactElement> {
               variant="outline"
               className="h-9 rounded-[9px] text-sm font-bold"
             >
+              <GitBranch aria-hidden className="size-4" />
               จัดสรรงาน
             </Button>
           ) : null
         }
       />
 
-      <div className="px-6 pt-5">
+      <div className="pt-5">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <KpiCard label="งาน Active" value={activeJobs.length} />
-          <KpiCard label="New" value={newCount} tone="new" />
-          <KpiCard label="ใกล้ Deadline" value={nearDeadline} tone="warn" />
-          <KpiCard label="Overdue" value={overdue} tone="danger" />
+          <KpiCard label="งานใหม่" value={newCount} tone="new" href="/jobs?status=New" />
+          <KpiCard label="ใกล้ Deadline" value={nearDeadline} tone="warn" href="/risk" />
+          <KpiCard label="เกินกำหนด" value={overdue} tone="danger" href="/risk" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 px-6 pt-4 pb-8 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-4 pt-4 pb-8 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-4">
-          <Panel
-            title="Workload ตาม CS"
-            actions={<WorkloadLegend />}
-          >
+          <Panel title="Workload ตาม CS" actions={<WorkloadLegend />}>
             <div className="flex flex-col gap-4">
               {workloads.map(({ member, segments, total }) => (
                 <div key={member.csId} className="flex items-center gap-3">
@@ -174,8 +179,7 @@ export default async function TeamPage(): Promise<React.ReactElement> {
               return (
                 <div
                   key={member.csId}
-                  className="flex items-center gap-3 rounded-[10px] border p-2.5"
-                  style={{ borderColor: "var(--border)" }}
+                  className="flex items-center gap-3 rounded-[10px] border border-border p-2.5"
                 >
                   <PersonaAvatar name={member.displayName} />
                   <div className="min-w-0 flex-1">
@@ -184,11 +188,7 @@ export default async function TeamPage(): Promise<React.ReactElement> {
                         {member.displayName}
                       </strong>
                       <span
-                        className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                        style={{
-                          backgroundColor: `${statusPill.tone}1a`,
-                          color: statusPill.tone,
-                        }}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_PILL_CLASSES[statusPill.tone]}`}
                       >
                         {statusPill.label}
                       </span>

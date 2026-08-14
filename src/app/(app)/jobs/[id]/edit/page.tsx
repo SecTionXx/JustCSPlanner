@@ -49,7 +49,7 @@ export default async function EditJobPage({
         }
         subtitle={`${job.customer}${job.route ? ` · ${job.route}` : ""}`}
       />
-      <div className="px-6 pt-4 pb-8">
+      <div className="pt-4 pb-8">
         <Panel>
           <EditJobForm
             job={job}

@@ -75,7 +75,7 @@ export function EmailRowActions({
           defaultValue={suggestedJobId ?? ""}
           disabled={pending || jobs.length === 0}
           className="h-8 min-w-52 max-w-full rounded-md border bg-white px-2 text-xs"
-          style={{ borderColor: "var(--border)" }}
+         
           aria-label="เลือกงานที่จะเชื่อม"
         >
           <option value="" disabled>
@@ -118,7 +118,7 @@ export function EmailRowActions({
         </Button>
       </div>
       {error ? (
-        <span className="text-[11px] font-semibold text-[#c43850]">{error}</span>
+        <span className="text-[11px] font-semibold text-destructive">{error}</span>
       ) : suggestedJobId ? (
         <span className="text-[11px] text-muted-foreground">
           แนะนำจากเลข booking หรือชื่อลูกค้าที่พบในข้อความ

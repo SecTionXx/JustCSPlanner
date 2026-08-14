@@ -10,7 +10,7 @@ export interface StepPillsProps {
 }
 
 /**
- * Horizontal step indicator. Active step uses lavender bg + brand text.
+ * Horizontal step indicator. Active step = primary tint pill.
  */
 export function StepPills({
   steps,
@@ -27,14 +27,9 @@ export function StepPills({
             className={cn(
               "rounded-full px-2.5 py-[7px] text-xs leading-none",
               active
-                ? "font-bold"
-                : "text-[#778096]"
+                ? "bg-secondary font-bold text-secondary-foreground"
+                : "bg-muted text-muted-foreground"
             )}
-            style={
-              active
-                ? { backgroundColor: "#e8e0ff", color: "#5b21b6" }
-                : { backgroundColor: "#f0eef9" }
-            }
           >
             {step}
           </span>

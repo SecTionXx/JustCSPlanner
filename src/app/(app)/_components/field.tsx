@@ -42,7 +42,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-end justify-between gap-3 px-6 pt-6",
+        "flex flex-wrap items-end justify-between gap-3",
         className,
       )}
     >
@@ -77,10 +77,9 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-[14px] border bg-white p-4",
+        "rounded-[14px] border bg-card text-card-foreground p-4",
         className,
       )}
-      style={{ borderColor: "var(--border)" }}
     >
       {(title || actions) && (
         <header className="mb-3 flex items-center justify-between gap-2">

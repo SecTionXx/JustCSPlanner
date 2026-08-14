@@ -5,47 +5,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Notice, OptionChips } from "@/components/shell";
-import {
-  JOB_STATUSES,
-  PRIORITIES,
-  SERVICE_TYPES,
-  SHIPMENT_TYPES,
-  type JobStatus,
-  type Priority,
-  type ServiceType,
-  type ShipmentType,
-} from "@/lib/enums";
-import type { JobCard, JobPatch, TeamMember } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { Notice } from "@/components/shell";
+import type { JobCard, JobPatch } from "@/lib/types";
 
 import { editJob } from "../../../../actions";
+import {
+  JobFormFields,
+  type JobFormValues,
+} from "../../../_components/job-form-fields";
 
 export interface EditJobFormProps {
   job: JobCard;
-  team: TeamMember[];
+  team: Parameters<typeof JobFormFields>[0]["team"];
   /** Whether the user may change the job owner (lead/admin). */
   canReassign: boolean;
   /** Whether the user may change the deadline (lead/admin). */
   canChangeDeadline: boolean;
 }
-
-const STATUS_OPTIONS: { value: JobStatus; label: string }[] = JOB_STATUSES.map(
-  (s) => ({ value: s, label: s }),
-);
-
-const SHIPMENT_OPTIONS: { value: ShipmentType; label: string }[] =
-  SHIPMENT_TYPES.map((s) => ({ value: s, label: s }));
-
-const PRIORITY_OPTIONS: { value: Priority; label: string }[] = PRIORITIES.map(
-  (p) => ({ value: p, label: p }),
-);
-
-const FORM_FIELD = "flex flex-col gap-1.5";
-const INPUT_CLASS = "h-9 text-sm";
 
 /** ISO "2026-08-14T15:00:00.000+07:00" → datetime-local "2026-08-14T15:00". */
 function toDatetimeLocal(iso?: string): string {
@@ -78,7 +54,7 @@ export function EditJobForm({
 
   const originalDeadlineLocal = toDatetimeLocal(job.deadline);
 
-  const [form, setForm] = React.useState({
+  const [form, setForm] = React.useState<JobFormValues>({
     customer: job.customer,
     owner: job.owner,
     deadline: originalDeadlineLocal,
@@ -101,10 +77,7 @@ export function EditJobForm({
   const deadlineChanged = form.deadline !== originalDeadlineLocal;
   const needsReason = ownerChanged || deadlineChanged;
 
-  const update = <K extends keyof typeof form>(
-    key: K,
-    value: (typeof form)[K],
-  ): void => {
+  const handleChange = (key: keyof JobFormValues, value: string): void => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -135,7 +108,7 @@ export function EditJobForm({
       deadline: toIso(form.deadline) ?? job.deadline,
       etd: toIso(form.etd),
       eta: toIso(form.eta),
-      latestSummary: orUndefined(form.latestSummary),
+      latestSummary: orUndefined(form.latestSummary ?? ""),
       docLinks: docLinks.length > 0 ? docLinks : undefined,
     };
 
@@ -156,193 +129,14 @@ export function EditJobForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className={cn(FORM_FIELD, "sm:col-span-2")}>
-          <Label htmlFor="customer" className="text-xs font-bold">
-            ลูกค้า <span className="text-[#c43850]">*</span>
-          </Label>
-          <Input
-            id="customer"
-            required
-            value={form.customer}
-            onChange={(e) => update("customer", e.target.value)}
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label htmlFor="owner" className="text-xs font-bold">
-            Assign ให้ <span className="text-[#c43850]">*</span>
-          </Label>
-          <select
-            id="owner"
-            required
-            value={form.owner}
-            onChange={(e) => update("owner", e.target.value)}
-            disabled={!canReassign}
-            className={cn(INPUT_CLASS, "rounded-md border bg-white px-2.5")}
-            style={{ borderColor: "var(--border)" }}
-          >
-            {team.map((m) => (
-              <option key={m.csId} value={m.csId}>
-                {m.displayName} ({m.role})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label htmlFor="deadline" className="text-xs font-bold">
-            Deadline <span className="text-[#c43850]">*</span>
-          </Label>
-          <Input
-            id="deadline"
-            type="datetime-local"
-            required
-            value={form.deadline}
-            onChange={(e) => update("deadline", e.target.value)}
-            disabled={!canChangeDeadline}
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label className="text-xs font-bold">สถานะ</Label>
-          <OptionChips
-            options={STATUS_OPTIONS}
-            value={form.status}
-            onChange={(v) => update("status", v as JobStatus)}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label className="text-xs font-bold">Shipment Type</Label>
-          <OptionChips
-            options={SHIPMENT_OPTIONS}
-            value={form.shipmentType}
-            onChange={(v) => update("shipmentType", v as ShipmentType)}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label htmlFor="serviceType" className="text-xs font-bold">
-            Service Type
-          </Label>
-          <select
-            id="serviceType"
-            value={form.serviceType}
-            onChange={(e) => update("serviceType", e.target.value as ServiceType)}
-            className={cn(INPUT_CLASS, "rounded-md border bg-white px-2.5")}
-            style={{ borderColor: "var(--border)" }}
-          >
-            {SERVICE_TYPES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label className="text-xs font-bold">Priority</Label>
-          <OptionChips
-            options={PRIORITY_OPTIONS}
-            value={form.priority}
-            onChange={(v) => update("priority", v as Priority)}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label htmlFor="bookingNumber" className="text-xs font-bold">
-            Booking No.
-          </Label>
-          <Input
-            id="bookingNumber"
-            value={form.bookingNumber}
-            onChange={(e) => update("bookingNumber", e.target.value)}
-            placeholder="BK-xxxxx"
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label htmlFor="route" className="text-xs font-bold">
-            Route
-          </Label>
-          <Input
-            id="route"
-            value={form.route}
-            onChange={(e) => update("route", e.target.value)}
-            placeholder="Bangkok → Singapore"
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label htmlFor="carrier" className="text-xs font-bold">
-            Carrier
-          </Label>
-          <Input
-            id="carrier"
-            value={form.carrier}
-            onChange={(e) => update("carrier", e.target.value)}
-            placeholder="ONE / Maersk / EVA..."
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label htmlFor="etd" className="text-xs font-bold">
-            ETD
-          </Label>
-          <Input
-            id="etd"
-            type="datetime-local"
-            value={form.etd}
-            onChange={(e) => update("etd", e.target.value)}
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <div className={FORM_FIELD}>
-          <Label htmlFor="eta" className="text-xs font-bold">
-            ETA
-          </Label>
-          <Input
-            id="eta"
-            type="datetime-local"
-            value={form.eta}
-            onChange={(e) => update("eta", e.target.value)}
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <div className={cn(FORM_FIELD, "sm:col-span-2")}>
-          <Label htmlFor="docLinks" className="text-xs font-bold">
-            ลิงก์เอกสาร (ใส่บรรทัดละลิงก์)
-          </Label>
-          <Textarea
-            id="docLinks"
-            value={form.docLinks}
-            onChange={(e) => update("docLinks", e.target.value)}
-            placeholder={"https://drive.google.com/...\nhttps://..."}
-            className="min-h-[60px] text-sm"
-          />
-        </div>
-
-        <div className={cn(FORM_FIELD, "sm:col-span-2")}>
-          <Label htmlFor="latestSummary" className="text-xs font-bold">
-            Note / สรุปล่าสุด
-          </Label>
-          <Textarea
-            id="latestSummary"
-            value={form.latestSummary}
-            onChange={(e) => update("latestSummary", e.target.value)}
-            placeholder="ข้อมูลเพิ่มเติมสำหรับ CS"
-            className="min-h-[70px] text-sm"
-          />
-        </div>
-      </div>
+      <JobFormFields
+        values={form}
+        onChange={handleChange}
+        team={team}
+        mode="edit"
+        ownerDisabled={!canReassign}
+        deadlineDisabled={!canChangeDeadline}
+      />
 
       {needsReason ? (
         <Notice title="ต้องมีเหตุผล (High-trust)">
@@ -355,20 +149,16 @@ export function EditJobForm({
             onChange={(e) => setReason(e.target.value)}
             required
             placeholder="เหตุผลในการเปลี่ยนแปลง"
-            className="mt-2 min-h-[70px] w-full rounded-[9px] border bg-white px-3 py-2 text-sm"
-            style={{ borderColor: "var(--border)" }}
+            className="mt-2 min-h-[70px] w-full rounded-[9px] border border-input bg-card px-3 py-2 text-sm"
           />
         </Notice>
       ) : null}
 
       {error ? (
-        <p className="text-xs font-semibold text-[#c43850]">{error}</p>
+        <p className="text-xs font-semibold text-destructive">{error}</p>
       ) : null}
 
-      <div
-        className="flex items-center justify-end gap-2 border-t pt-3"
-        style={{ borderColor: "var(--border)" }}
-      >
+      <div className="sticky bottom-0 -mx-4 mb-2 flex items-center justify-end gap-2 rounded-[12px] border border-border bg-card/95 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur">
         <Button
           render={<Link href={`/jobs/${job.jobId}`} />}
           variant="outline"
