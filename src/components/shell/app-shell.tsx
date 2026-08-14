@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -50,12 +50,20 @@ export function AppShell({
   className,
 }: AppShellProps): React.ReactElement {
   const pathname = usePathname()
+  const router = useRouter()
   const activePath = currentPath ?? pathname ?? ""
+  const [query, setQuery] = React.useState("")
 
   const isActive = (href: string): boolean =>
     href === "/"
       ? activePath === "/"
       : activePath === href || activePath.startsWith(`${href}/`)
+
+  function handleSearch(e: React.FormEvent<HTMLFormElement>): void {
+    e.preventDefault()
+    const trimmed = query.trim()
+    router.push(trimmed ? `/jobs?q=${encodeURIComponent(trimmed)}` : "/jobs")
+  }
 
   return (
     <div className={cn("flex min-h-screen flex-col", className)}>
@@ -72,11 +80,19 @@ export function AppShell({
             {tagline}
           </span>
         </div>
-        <Input
-          type="search"
-          placeholder={searchPlaceholder}
-          className="hidden h-9 min-w-[250px] max-w-[480px] flex-1 border-0 bg-white text-xs text-[#707994] placeholder:text-[#9aa1b5] md:inline-flex"
-        />
+        <form
+          onSubmit={handleSearch}
+          role="search"
+          className="hidden min-w-[250px] max-w-[480px] flex-1 md:block"
+        >
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="h-9 border-0 bg-white text-xs text-[#707994] placeholder:text-[#9aa1b5]"
+          />
+        </form>
         <div
           className="whitespace-nowrap rounded-[9px] px-2.5 py-1.5 text-[13px]"
           style={{ backgroundColor: "#625ab0" }}

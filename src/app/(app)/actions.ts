@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getRepository } from "@/lib/repository";
+import type { UpdateJobOptions } from "@/lib/repository";
 import {
   PRIORITIES,
   SERVICE_TYPES,
@@ -14,7 +15,7 @@ import {
   type ServiceType,
   type ShipmentType,
 } from "@/lib/enums";
-import type { CreateJobInput } from "@/lib/types";
+import type { CreateJobInput, JobPatch } from "@/lib/types";
 
 function isString(value: unknown): value is string {
   return typeof value === "string";
@@ -141,5 +142,71 @@ export async function toggleTodo(
     { status: done ? "Done" : "Not Started" },
     user,
   );
+  revalidatePath(`/jobs/${jobId}`);
+}
+
+/**
+ * Edit an existing Job Card. If `patch` changes the owner or deadline,
+ * `options.reason` MUST be provided — the repository enforces this and will
+ * throw otherwise. The UI must collect a reason first (high-trust rule).
+ */
+export async function editJob(
+  jobId: string,
+  patch: JobPatch,
+  options?: UpdateJobOptions,
+): Promise<void> {
+  const user = getCurrentUser();
+  const repo = getRepository();
+  await repo.updateJob(jobId, patch, user, options);
+  revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/jobs");
+  revalidatePath("/");
+}
+
+/**
+ * Add a manually-assigned To-do to a job.
+ */
+export async function addTodo(
+  jobId: string,
+  title: string,
+  assignee: string,
+  deadline?: string,
+): Promise<void> {
+  const trimmedTitle = title.trim();
+  const trimmedAssignee = assignee.trim();
+  if (!trimmedTitle) throw new Error("กรุณาระบุชื่อ To-do");
+  if (!trimmedAssignee) throw new Error("กรุณาระบุผู้รับมอบหมาย");
+
+  const user = getCurrentUser();
+  const repo = getRepository();
+  await repo.createTodo(
+    { jobId, title: trimmedTitle, assignee: trimmedAssignee, source: "Assigned", deadline },
+    user,
+  );
+  revalidatePath(`/jobs/${jobId}`);
+}
+
+/**
+ * Delete a To-do.
+ */
+export async function deleteTodoAction(
+  todoId: string,
+  jobId: string,
+): Promise<void> {
+  const repo = getRepository();
+  await repo.deleteTodo(todoId);
+  revalidatePath(`/jobs/${jobId}`);
+}
+
+/**
+ * Add a comment/note to a job. Persisted as an ActivityLog row (note_added).
+ */
+export async function addComment(jobId: string, text: string): Promise<void> {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error("กรุณาระบุข้อความคอมเมนต์");
+
+  const user = getCurrentUser();
+  const repo = getRepository();
+  await repo.addNote(jobId, trimmed, user);
   revalidatePath(`/jobs/${jobId}`);
 }

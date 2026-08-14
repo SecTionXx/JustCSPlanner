@@ -12,6 +12,7 @@ import { formatDateTime, isNearDeadline, isOverdue } from "@/lib/utils";
 import type { ActivityLog } from "@/lib/types";
 
 import { Field, PageHeader, Panel } from "../../_components/field";
+import { JobCommentsClient } from "./_components/job-comments-client";
 import { JobDetailClient } from "./_components/job-detail-client";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,19 @@ export default async function JobDetailPage({
     .slice()
     .sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
 
+  // Notes/comments are ActivityLog rows with event "note_added"; the body lives
+  // in `newValue`. Newest first for the thread.
+  const notes = activity
+    .filter((a) => a.event === "note_added")
+    .slice()
+    .sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1))
+    .map((a) => ({
+      id: a.logId,
+      author: teamById.get(a.actor) ?? a.actor,
+      time: formatDateTime(a.timestamp),
+      body: a.newValue ?? "",
+    }));
+
   const deadlineTone = isOverdue(job)
     ? "danger"
     : isNearDeadline(job)
@@ -93,7 +107,11 @@ export default async function JobDetailPage({
         }
         subtitle={`${job.customer}${job.route ? ` · ${job.route}` : ""}`}
         actions={
-          <Button variant="outline" className="h-9 rounded-[9px] text-sm font-bold">
+          <Button
+            render={<Link href={`/jobs/${id}/edit`} />}
+            variant="outline"
+            className="h-9 rounded-[9px] text-sm font-bold"
+          >
             ✎ แก้ไขงาน
           </Button>
         }
@@ -146,7 +164,12 @@ export default async function JobDetailPage({
               status={job.status}
               todos={todos}
               ownerName={ownerName}
+              team={team}
             />
+          </Panel>
+
+          <Panel title="ความคิดเห็น / Note">
+            <JobCommentsClient jobId={job.jobId} comments={notes} />
           </Panel>
 
           {docs.length > 0 ? (

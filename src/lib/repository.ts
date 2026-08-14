@@ -45,6 +45,14 @@ export interface JobRepository {
     patch: TodoPatch,
     currentUser: CurrentUser,
   ): Promise<Todo>;
+  /** Remove a todo. No activity log required. */
+  deleteTodo(todoId: string): Promise<void>;
+  /**
+   * Append a note/comment as an ActivityLog row (event: "note_added") and
+   * return the created log entry. Reuses the existing ActivityLog tab — no
+   * new sheet or column.
+   */
+  addNote(jobId: string, text: string, currentUser: CurrentUser): Promise<ActivityLog>;
   listActivity(jobId: string): Promise<ActivityLog[]>;
   listTeam(): Promise<TeamMember[]>;
   listTemplates(type?: Template["templateType"]): Promise<Template[]>;

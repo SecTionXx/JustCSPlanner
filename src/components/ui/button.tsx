@@ -44,12 +44,21 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  render,
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
+      // When a Button renders a non-button element (e.g. `render={<Link/>}` for
+      // navigation), it is intentionally not a native <button>. Default
+      // nativeButton to false in that case so Base UI stops emitting the
+      // "expected a native <button>" warning and lets the anchor keep its
+      // semantics. Callers can still override explicitly.
+      nativeButton={nativeButton ?? (render !== undefined ? false : undefined)}
       className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
       {...props}
     />
   )

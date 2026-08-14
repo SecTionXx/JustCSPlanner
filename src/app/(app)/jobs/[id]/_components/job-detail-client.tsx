@@ -12,18 +12,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { TodoList } from "@/components/shell";
 import { type JobStatus } from "@/lib/enums";
-import type { Todo } from "@/lib/types";
+import type { TeamMember, Todo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import { toggleTodo, updateJobStatus } from "../../../actions";
+import { addTodo, deleteTodoAction, toggleTodo, updateJobStatus } from "../../../actions";
 
 export interface JobDetailClientProps {
   jobId: string;
   status: JobStatus;
   todos: Todo[];
   ownerName: string;
+  team: TeamMember[];
 }
 
 const STATUS_ACTIONS: { label: string; status: JobStatus; variant?: "default" | "outline"; confirm?: boolean }[] = [
@@ -40,13 +42,19 @@ export function JobDetailClient({
   status,
   todos,
   ownerName,
+  team,
 }: JobDetailClientProps): React.ReactElement {
   const todoItems = todos
     .slice()
     .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
     .map((t) => ({
       id: t.todoId,
-      title: t.title,
+      title: (
+        <span className="inline-flex flex-1 items-center justify-between gap-2">
+          <span>{t.title}</span>
+          <TodoDeleteButton todoId={t.todoId} jobId={jobId} />
+        </span>
+      ),
       done: t.status === "Done",
     }));
 
@@ -73,9 +81,137 @@ export function JobDetailClient({
       </div>
 
       <div className="mt-4">
-        <TodoList items={todoItems} onToggle={handleToggle} />
+        <TodoList items={todoItems} onToggle={handleToggle}>
+          <AddTodoComposer jobId={jobId} team={team} />
+        </TodoList>
       </div>
     </>
+  );
+}
+
+function AddTodoComposer({
+  jobId,
+  team,
+}: {
+  jobId: string;
+  team: TeamMember[];
+}): React.ReactElement {
+  const [title, setTitle] = React.useState("");
+  const [assignee, setAssignee] = React.useState(team[0]?.csId ?? "");
+  const [pending, startTransition] = React.useTransition();
+
+  const canSubmit = title.trim() !== "" && assignee !== "" && !pending;
+
+  function handleAdd(): void {
+    if (!canSubmit) return;
+    const trimmed = title.trim();
+    startTransition(() => {
+      addTodo(jobId, trimmed, assignee)
+        .then(() => {
+          setTitle("");
+        })
+        .catch(() => {
+          // keep input on failure so the user can retry
+        });
+    });
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#f0eef5] pt-2">
+      <Input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            handleAdd();
+          }
+        }}
+        placeholder="+ เพิ่ม To-do..."
+        className="h-8 min-w-[160px] flex-1 text-[13px]"
+      />
+      <select
+        value={assignee}
+        onChange={(e) => setAssignee(e.target.value)}
+        className="h-8 rounded-md border bg-white px-2 text-[13px]"
+        style={{ borderColor: "var(--border)" }}
+        aria-label="มอบหมายให้"
+      >
+        {team.map((m) => (
+          <option key={m.csId} value={m.csId}>
+            {m.displayName}
+          </option>
+        ))}
+      </select>
+      <Button
+        type="button"
+        size="sm"
+        disabled={!canSubmit}
+        onClick={handleAdd}
+        className="rounded-[9px] text-xs font-bold"
+      >
+        เพิ่ม
+      </Button>
+    </div>
+  );
+}
+
+function TodoDeleteButton({
+  todoId,
+  jobId,
+}: {
+  todoId: string;
+  jobId: string;
+}): React.ReactElement {
+  const [open, setOpen] = React.useState(false);
+  const [pending, startTransition] = React.useTransition();
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={
+          <button
+            type="button"
+            aria-label="ลบ To-do"
+            className="ml-1 inline-flex size-5 shrink-0 items-center justify-center rounded-[5px] text-[13px] leading-none text-muted-foreground transition-colors hover:bg-[#fbe7eb] hover:text-[#c43850]"
+          >
+            ×
+          </button>
+        }
+      />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>ลบ To-do</DialogTitle>
+          <DialogDescription>
+            ยืนยันการลบ To-do นี้? ไม่สามารถย้อนกลับได้
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            className="h-9 rounded-[9px]"
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            disabled={pending}
+            onClick={() => {
+              startTransition(() => {
+                deleteTodoAction(todoId, jobId)
+                  .then(() => setOpen(false))
+                  .catch(() => {
+                    // leave open on failure
+                  });
+              });
+            }}
+            className="h-9 rounded-[9px] font-bold"
+          >
+            ลบ
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

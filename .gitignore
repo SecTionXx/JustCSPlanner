@@ -36,3 +36,6 @@ next-env.d.ts
 
 # google service account key (local only)
 service-account.json
+
+# playwright mcp screenshots (local)
+.playwright-mcp/

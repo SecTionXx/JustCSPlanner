@@ -133,6 +133,53 @@ async function findRowNumber(tab: TabName, key: string, value: string): Promise<
   return -1;
 }
 
+/** Lazily-built title → sheetId (gid) map from spreadsheets.get. */
+let _sheetIdCache: Record<string, number> | null = null;
+async function getSheetId(tab: TabName): Promise<number> {
+  if (!_sheetIdCache) {
+    const res = await client().spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const map: Record<string, number> = {};
+    for (const sheet of res.data.sheets ?? []) {
+      const title = sheet.properties?.title;
+      const id = sheet.properties?.sheetId;
+      if (title && typeof id === "number") map[title] = id;
+    }
+    _sheetIdCache = map;
+  }
+  const id = _sheetIdCache[tab];
+  if (typeof id !== "number") throw new Error(`Sheet tab not found: ${tab}`);
+  return id;
+}
+
+/**
+ * Delete the first row whose `key` column equals `value` via batchUpdate
+ * (deleteDimension). No-op if the row is not found.
+ */
+async function deleteRowByValue(tab: TabName, key: string, value: string): Promise<void> {
+  const rowNumber = await findRowNumber(tab, key, value);
+  if (rowNumber === -1) return;
+  const sheetId = await getSheetId(tab);
+  // findRowNumber is 1-indexed (incl. header); batchUpdate ranges are 0-indexed.
+  const startIndex = rowNumber - 1;
+  await client().spreadsheets.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: "ROWS",
+              startIndex,
+              endIndex: startIndex + 1,
+            },
+          },
+        },
+      ],
+    },
+  });
+}
+
 function serialize(tab: TabName, obj: object): string[] {
   const o = obj as Record<string, unknown>;
   return HEADERS_LIST[tab].map((h) => {
@@ -420,6 +467,21 @@ export class SheetsJobRepository implements JobRepository {
     return updated;
   }
 
+  async deleteTodo(todoId: string): Promise<void> {
+    await deleteRowByValue("Todos", "todoId", todoId);
+  }
+
+  async addNote(jobId: string, text: string, currentUser: CurrentUser): Promise<ActivityLog> {
+    return this.appendLog({
+      jobId,
+      actor: currentUser.csId,
+      timestamp: nowIso(),
+      event: "note_added",
+      field: "note",
+      newValue: text,
+    });
+  }
+
   async listActivity(jobId: string): Promise<ActivityLog[]> {
     return (await readTab("ActivityLog")).map(toActivity).filter((a) => a.jobId === jobId);
   }
@@ -435,11 +497,12 @@ export class SheetsJobRepository implements JobRepository {
 
   // --- internal ----------------------------------------------------------
 
-  private async appendLog(entry: Omit<ActivityLog, "logId">): Promise<void> {
+  private async appendLog(entry: Omit<ActivityLog, "logId">): Promise<ActivityLog> {
     const existing = (await readTab("ActivityLog")).map((r) => r.logId);
     const next = maxSeq(existing, "LOG", 6) + 1;
     const log: ActivityLog = { ...entry, logId: `LOG-${pad(next, 6)}` };
     await appendRow("ActivityLog", serialize("ActivityLog", log));
+    return log;
   }
 
   private async seedTemplateTodo(

@@ -294,6 +294,24 @@ export class MockJobRepository implements JobRepository {
     return clone(updated);
   }
 
+  async deleteTodo(todoId: string): Promise<void> {
+    const idx = store.todos.findIndex((t) => t.todoId === todoId);
+    if (idx === -1) return;
+    store.todos = store.todos.filter((t) => t.todoId !== todoId);
+  }
+
+  async addNote(jobId: string, text: string, currentUser: CurrentUser): Promise<ActivityLog> {
+    const timestamp = nowIso();
+    return appendLog({
+      jobId,
+      actor: currentUser.csId,
+      timestamp,
+      event: "note_added",
+      field: "note",
+      newValue: text,
+    });
+  }
+
   async listActivity(jobId: string): Promise<ActivityLog[]> {
     return clone(store.activity.filter((a) => a.jobId === jobId));
   }
