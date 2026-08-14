@@ -5,6 +5,8 @@
 import type {
   ActivityEvent,
   JobStatus,
+  NotificationChannel,
+  NotificationStatus,
   Priority,
   Role,
   ServiceType,
@@ -152,3 +154,29 @@ export interface CreateTodoInput {
 export type TodoPatch = Partial<
   Omit<Todo, "todoId" | "jobId" | "createdBy" | "createdAt">
 >;
+
+/** Notifications row — schema §8. Append-only. */
+export interface Notification {
+  notifId: string; // NOTIF-NNNNNN
+  jobId?: string;
+  recipientCsId: string; // FK → TeamMember.csId
+  event: ActivityEvent;
+  channel: NotificationChannel;
+  subject: string;
+  body?: string;
+  status: NotificationStatus;
+  createdAt: string;
+  readAt?: string;
+}
+
+/** Input for creating a Notification (notifId/timestamps generated server-side). */
+export interface CreateNotificationInput {
+  jobId?: string;
+  recipientCsId: string;
+  event: ActivityEvent;
+  channel: NotificationChannel;
+  subject: string;
+  body?: string;
+  /** Defaults to "sent". */
+  status?: NotificationStatus;
+}

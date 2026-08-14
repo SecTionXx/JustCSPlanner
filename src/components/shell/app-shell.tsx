@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 
 import { switchDevUser } from "@/app/(app)/actions"
 import { Input } from "@/components/ui/input"
+import { NotificationBell } from "@/components/shell/notification-bell"
 import type { Role } from "@/lib/enums"
 import { cn } from "@/lib/utils"
 
@@ -36,6 +37,8 @@ export interface AppShellProps {
   devUsers?: DevUserOption[]
   /** csId of the active dev user (selects the matching option). */
   currentCsId?: string
+  /** Unread notification count for the bell badge (server-fetched). */
+  unreadCount?: number
   className?: string
 }
 
@@ -61,6 +64,7 @@ export function AppShell({
   searchPlaceholder = "⌕ ค้นหาชื่องาน, CS, Booking หรือ Shipment",
   devUsers,
   currentCsId,
+  unreadCount,
   className,
 }: AppShellProps): React.ReactElement {
   const pathname = usePathname()
@@ -108,6 +112,7 @@ export function AppShell({
           />
         </form>
         <div className="flex items-center gap-2">
+          <NotificationBell unreadCount={unreadCount} />
           {devUsers && devUsers.length > 0 ? (
             <DevRoleSwitcher users={devUsers} currentCsId={currentCsId} />
           ) : null}

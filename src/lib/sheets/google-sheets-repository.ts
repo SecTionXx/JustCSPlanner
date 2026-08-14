@@ -12,11 +12,13 @@ import type { ActivityEvent } from "../enums";
 import type {
   ActivityLog,
   CreateJobInput,
+  CreateNotificationInput,
   CreateTodoInput,
   CurrentUser,
   JobCard,
   JobFilter,
   JobPatch,
+  Notification,
   Template,
   TeamMember,
   Todo,
@@ -60,6 +62,10 @@ const HEADERS = {
   ],
   Team: ["csId", "displayName", "role", "active", "email"],
   Templates: ["templateType", "order", "todoTitle", "deadlineOffsetHours", "notes"],
+  Notifications: [
+    "notifId", "jobId", "recipientCsId", "event", "channel", "subject", "body",
+    "status", "createdAt", "readAt",
+  ],
 } as const;
 
 type TabName = keyof typeof HEADERS;
@@ -340,6 +346,20 @@ function toTemplate(r: Row): Template {
     notes: r.notes || undefined,
   };
 }
+function toNotification(r: Row): Notification {
+  return {
+    notifId: r.notifId,
+    jobId: r.jobId || undefined,
+    recipientCsId: r.recipientCsId,
+    event: r.event as Notification["event"],
+    channel: r.channel as Notification["channel"],
+    subject: r.subject,
+    body: r.body || undefined,
+    status: r.status as Notification["status"],
+    createdAt: r.createdAt,
+    readAt: r.readAt || undefined,
+  };
+}
 
 // --- the repository ------------------------------------------------------
 
@@ -419,7 +439,7 @@ export class SheetsJobRepository implements JobRepository {
       await this.seedTemplateTodo(job, t, currentUser);
     }
 
-    notify("job_created", { jobId, customer: job.customer });
+    await notify("job_created", { jobId, customer: job.customer }, [job.owner]);
     return job;
   }
 
@@ -651,6 +671,49 @@ export class SheetsJobRepository implements JobRepository {
       String(order),
     );
     await deleteRowByNumber("Templates", rowNumber);
+  }
+
+  async appendNotification(input: CreateNotificationInput): Promise<Notification> {
+    const existing = (await readTab("Notifications")).map((r) => r.notifId);
+    const next = maxSeq(existing, "NOTIF", 6) + 1;
+    const notif: Notification = {
+      notifId: `NOTIF-${pad(next, 6)}`,
+      jobId: input.jobId,
+      recipientCsId: input.recipientCsId,
+      event: input.event,
+      channel: input.channel,
+      subject: input.subject,
+      body: input.body,
+      status: input.status ?? "sent",
+      createdAt: nowIso(),
+    };
+    await appendRow("Notifications", serialize("Notifications", notif));
+    return notif;
+  }
+
+  async listNotifications(
+    recipientCsId?: string,
+    unreadOnly?: boolean,
+  ): Promise<Notification[]> {
+    let result = (await readTab("Notifications")).map(toNotification);
+    if (recipientCsId) {
+      result = result.filter((n) => n.recipientCsId === recipientCsId);
+    }
+    if (unreadOnly) {
+      result = result.filter((n) => n.status !== "read");
+    }
+    return result;
+  }
+
+  async markNotificationRead(notifId: string): Promise<void> {
+    const rowNumber = await findRowNumber("Notifications", "notifId", notifId);
+    if (rowNumber === -1) return;
+    const before = (await readTab("Notifications"))
+      .map(toNotification)
+      .find((n) => n.notifId === notifId);
+    if (!before) return;
+    const updated: Notification = { ...before, status: "read", readAt: nowIso() };
+    await writeRow("Notifications", rowNumber, serialize("Notifications", updated));
   }
 
   // --- internal ----------------------------------------------------------

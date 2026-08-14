@@ -137,6 +137,12 @@
 **`ActivityLog.event`**:
 `job_created` · `job_closed` · `status_changed` · `owner_changed` · `deadline_changed` · `todo_added` · `todo_completed` · `note_added` · `doc_added`
 
+**`Notifications.channel`**:
+`in-app` · `email` · `line`
+
+**`Notifications.status`**:
+`sent` · `failed` · `read`
+
 > ⚠️ ค่าเหล่านี้ต้องตรงทั้งใน dropdown ของ Sheet และในโค้ด Next.js — ถ้าเปลี่ยน ต้องเปลี่ยนพร้อมกันทั้งสองฝั่ง
 
 ---
@@ -147,3 +153,24 @@
 - **ไม่มี transaction**: การเขียนหลาย sheet พร้อมกัน (เช่น สร้าง job + To-do + log) ต้องคิดเรื่องกรณีเขียนครึ่งเดียวแล้ว fail
 - **เลข ID ต่อเนื่อง**: โค้ดต้องหา `max + 1` หรือใช้ timestamp-based id เพื่อกันชนกันตอนหลายคนสร้างพร้อมกัน
 - **ขนาด/ปริมาณ**: เหมาะกับทีมเล็ก–กลาง ถ้าแถว/ผู้ใช้พร้อมกันเยอะขึ้น ให้พิจารณาย้ายไป DB จริง
+
+---
+
+## 8. Sheet `Notifications` (การแจ้งเตือน — append-only)
+
+เก็บการแจ้งเตือนต่อผู้รับ ต่อช่องทาง (channel) ปัจจุบันมีเฉพาะ `in-app` (email/LINE จะเพิ่มใน P2.1) `notify()` สร้างแถวนี้ผ่าน in-app channel
+
+| คอลัมน์ | ชื่อ field | ชนิด/รูปแบบ | ตัวอย่าง |
+|---|---|---|---|
+| A | `notifId` | string `NOTIF-NNNNNN` | `NOTIF-000001` |
+| B | `jobId` | string (FK → `JobCards.jobId`, อาจว่าง) | `JOB-2026-0001` |
+| C | `recipientCsId` | string (FK → `Team.csId`) | `aom` |
+| D | `event` | enum (ดู §6 — `ActivityLog.event`) | `job_created` |
+| E | `channel` | enum: `in-app` / `email` / `line` | `in-app` |
+| F | `subject` | string | `การแจ้งเตือน: สร้างงานใหม่` |
+| G | `body` | string (สรุปย่อ หลายบรรทัดได้) | `ลูกค้า: LCH Logistics\nJob: JOB-2026-0001` |
+| H | `status` | enum: `sent` / `failed` / `read` | `sent` |
+| I | `createdAt` | ISO datetime | `2026-08-14T09:30:00+07:00` |
+| J | `readAt` | ISO datetime (ว่างถ้ายังไม่อ่าน) | |
+
+**หมายเหตุ**: append-only — ห้ามแก้แถวเดิม ยกเว้นการ mark `status` → `read` พร้อม stamp `readAt` (กระทำผ่าน `markNotificationRead`)

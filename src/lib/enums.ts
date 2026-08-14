@@ -66,3 +66,11 @@ export type ActivityEvent = (typeof ACTIVITY_EVENTS)[number];
 /** Todos.source — schema §2 (G) */
 export const TODO_SOURCES = ["Template", "Assigned", "AI draft"] as const;
 export type TodoSource = (typeof TODO_SOURCES)[number];
+
+/** Notifications.status — schema §6 */
+export const NOTIFICATION_STATUSES = ["sent", "failed", "read"] as const;
+export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
+
+/** Notifications.channel — schema §6 */
+export const NOTIFICATION_CHANNELS = ["in-app", "email", "line"] as const;
+export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];

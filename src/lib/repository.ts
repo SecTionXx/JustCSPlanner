@@ -10,11 +10,13 @@ import { SheetsJobRepository } from "./sheets/google-sheets-repository";
 import type {
   ActivityLog,
   CreateJobInput,
+  CreateNotificationInput,
   CreateTodoInput,
   CurrentUser,
   JobCard,
   JobFilter,
   JobPatch,
+  Notification,
   Template,
   TeamMember,
   Todo,
@@ -117,6 +119,18 @@ export interface JobRepository {
     order: number,
     currentUser: CurrentUser,
   ): Promise<void>;
+  /**
+   * Append a Notification row (append-only). The notifId and createdAt are
+   * generated server-side. Used by the in-app channel via getRepository().
+   */
+  appendNotification(input: CreateNotificationInput): Promise<Notification>;
+  /**
+   * List notifications. When `recipientCsId` is given, only that user's rows are
+   * returned. When `unreadOnly` is true, only rows whose status is not "read".
+   */
+  listNotifications(recipientCsId?: string, unreadOnly?: boolean): Promise<Notification[]>;
+  /** Set a notification's status to "read" and stamp readAt. No-op if missing. */
+  markNotificationRead(notifId: string): Promise<void>;
 }
 
 export type DataBackend = "mock" | "sheets";

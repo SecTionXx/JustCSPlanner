@@ -33,6 +33,10 @@ const TABS = {
   ],
   Team: ["csId", "displayName", "role", "active", "email"],
   Templates: ["templateType", "order", "todoTitle", "deadlineOffsetHours", "notes"],
+  Notifications: [
+    "notifId", "jobId", "recipientCsId", "event", "channel", "subject", "body",
+    "status", "createdAt", "readAt",
+  ],
 };
 
 const TEAM_ROWS = [

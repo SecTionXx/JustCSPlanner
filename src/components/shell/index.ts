@@ -1,4 +1,5 @@
 export { AppShell, type AppShellProps, type NavItem } from "./app-shell"
+export { NotificationBell, type NotificationBellProps } from "./notification-bell"
 export { KpiCard, type KpiCardProps, type KpiTone } from "./kpi-card"
 export {
   StatusBadge,

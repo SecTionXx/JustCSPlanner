@@ -8,11 +8,13 @@ import type {
 import type {
   ActivityLog,
   CreateJobInput,
+  CreateNotificationInput,
   CreateTodoInput,
   CurrentUser,
   JobCard,
   JobFilter,
   JobPatch,
+  Notification,
   Template,
   TeamMember,
   Todo,
@@ -37,6 +39,7 @@ const store = {
   activity: structuredClone(seedActivity) as ActivityLog[],
   team: structuredClone(seedTeam) as TeamMember[],
   templates: structuredClone(seedTemplates) as Template[],
+  notifications: [] as Notification[],
 };
 
 /** Deep clone helper — keeps mock state private. */
@@ -158,7 +161,7 @@ export class MockJobRepository implements JobRepository {
       this.seedTemplateTodo(job, t, currentUser);
     }
 
-    notify("job_created", { jobId, customer: job.customer });
+    await notify("job_created", { jobId, customer: job.customer }, [job.owner]);
 
     return clone(job);
   }
@@ -428,6 +431,46 @@ export class MockJobRepository implements JobRepository {
     store.templates = store.templates.filter(
       (t) => !(t.templateType === templateType && t.order === order),
     );
+  }
+
+  async appendNotification(input: CreateNotificationInput): Promise<Notification> {
+    const createdAt = nowIso();
+    const next = maxSeq(store.notifications.map((n) => n.notifId), "NOTIF", 6) + 1;
+    const notif: Notification = {
+      notifId: `NOTIF-${pad(next, 6)}`,
+      jobId: input.jobId,
+      recipientCsId: input.recipientCsId,
+      event: input.event,
+      channel: input.channel,
+      subject: input.subject,
+      body: input.body,
+      status: input.status ?? "sent",
+      createdAt,
+    };
+    store.notifications.push(notif);
+    return clone(notif);
+  }
+
+  async listNotifications(
+    recipientCsId?: string,
+    unreadOnly?: boolean,
+  ): Promise<Notification[]> {
+    let result = clone(store.notifications);
+    if (recipientCsId) {
+      result = result.filter((n) => n.recipientCsId === recipientCsId);
+    }
+    if (unreadOnly) {
+      result = result.filter((n) => n.status !== "read");
+    }
+    return result;
+  }
+
+  async markNotificationRead(notifId: string): Promise<void> {
+    const idx = store.notifications.findIndex((n) => n.notifId === notifId);
+    if (idx === -1) return;
+    const before = store.notifications[idx];
+    if (!before) return;
+    store.notifications[idx] = { ...before, status: "read", readAt: nowIso() };
   }
 
   // --- internal helpers ----------------------------------------------------
