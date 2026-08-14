@@ -29,6 +29,7 @@ import type {
   UpdateJobOptions,
 } from "../repository";
 import { notify } from "../notify";
+import { extractMentionTokens, resolveMentionCsIds } from "../notifications/policy";
 import { isNearDeadline, isOverdue, nextJobId, nowIso } from "../utils";
 import { activity as seedActivity, jobs as seedJobs, templates as seedTemplates, team as seedTeam, todos as seedTodos } from "./data";
 
@@ -161,7 +162,12 @@ export class MockJobRepository implements JobRepository {
       this.seedTemplateTodo(job, t, currentUser);
     }
 
-    await notify("job_created", { jobId, customer: job.customer }, [job.owner]);
+    await notify("job_created", {
+      jobId,
+      customer: job.customer,
+      job,
+      actor: currentUser.csId,
+    });
 
     return clone(job);
   }
@@ -218,6 +224,16 @@ export class MockJobRepository implements JobRepository {
           newValue: afterStatus,
           reason: options?.reason,
         });
+        // Policy skips non-meaningful transitions (e.g. New → In Progress).
+        await notify(event, {
+          jobId,
+          customer: updated.customer,
+          job: updated,
+          oldValue: beforeStatus,
+          newValue: afterStatus,
+          reason: options?.reason,
+          actor,
+        });
       }
     }
     if (ownerChanged) {
@@ -234,6 +250,15 @@ export class MockJobRepository implements JobRepository {
           newValue: afterOwner,
           reason: options?.reason,
         });
+        await notify("owner_changed", {
+          jobId,
+          customer: updated.customer,
+          job: updated,
+          oldValue: beforeOwner,
+          newValue: afterOwner,
+          reason: options?.reason,
+          actor,
+        });
       }
     }
     if (deadlineChanged) {
@@ -246,6 +271,15 @@ export class MockJobRepository implements JobRepository {
         oldValue: before.deadline,
         newValue: patch.deadline,
         reason: options?.reason,
+      });
+      await notify("deadline_changed", {
+        jobId,
+        customer: updated.customer,
+        job: updated,
+        oldValue: before.deadline,
+        newValue: patch.deadline,
+        reason: options?.reason,
+        actor,
       });
     }
 
@@ -325,7 +359,7 @@ export class MockJobRepository implements JobRepository {
 
   async addNote(jobId: string, text: string, currentUser: CurrentUser): Promise<ActivityLog> {
     const timestamp = nowIso();
-    return appendLog({
+    const log = appendLog({
       jobId,
       actor: currentUser.csId,
       timestamp,
@@ -333,6 +367,30 @@ export class MockJobRepository implements JobRepository {
       field: "note",
       newValue: text,
     });
+
+    // Parse @mentions → csIds, then notify the owner + any mentioned members.
+    try {
+      const job = store.jobs.find((j) => j.jobId === jobId);
+      if (job) {
+        const tokens = extractMentionTokens(text);
+        const team = await this.listTeam();
+        const mentioned = resolveMentionCsIds(tokens, team);
+        await notify("note_added", {
+          jobId,
+          customer: job.customer,
+          job,
+          newValue: text,
+          actor: currentUser.csId,
+          extra: { mentioned },
+        });
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[notify][note_added] mention resolution failed", error);
+      }
+    }
+
+    return log;
   }
 
   async listActivity(jobId: string): Promise<ActivityLog[]> {

@@ -33,6 +33,7 @@ import type {
   UpdateJobOptions,
 } from "../repository";
 import { notify } from "../notify";
+import { extractMentionTokens, resolveMentionCsIds } from "../notifications/policy";
 import { isNearDeadline, isOverdue, nextJobId, nowIso } from "../utils";
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? "";
@@ -439,7 +440,12 @@ export class SheetsJobRepository implements JobRepository {
       await this.seedTemplateTodo(job, t, currentUser);
     }
 
-    await notify("job_created", { jobId, customer: job.customer }, [job.owner]);
+    await notify("job_created", {
+      jobId,
+      customer: job.customer,
+      job,
+      actor: currentUser.csId,
+    });
     return job;
   }
 
@@ -476,17 +482,30 @@ export class SheetsJobRepository implements JobRepository {
         jobId, actor, timestamp, event, field: "status",
         oldValue: before.status, newValue: patch.status, reason: options?.reason,
       });
+      // Policy skips non-meaningful transitions (e.g. New → In Progress).
+      await notify(event, {
+        jobId, customer: updated.customer, job: updated,
+        oldValue: before.status, newValue: patch.status, reason: options?.reason, actor,
+      });
     }
     if (ownerChanged && patch.owner !== undefined) {
       await this.appendLog({
         jobId, actor, timestamp, event: "owner_changed", field: "owner",
         oldValue: before.owner, newValue: patch.owner, reason: options?.reason,
       });
+      await notify("owner_changed", {
+        jobId, customer: updated.customer, job: updated,
+        oldValue: before.owner, newValue: patch.owner, reason: options?.reason, actor,
+      });
     }
     if (deadlineChanged) {
       await this.appendLog({
         jobId, actor, timestamp, event: "deadline_changed", field: "deadline",
         oldValue: before.deadline, newValue: patch.deadline, reason: options?.reason,
+      });
+      await notify("deadline_changed", {
+        jobId, customer: updated.customer, job: updated,
+        oldValue: before.deadline, newValue: patch.deadline, reason: options?.reason, actor,
       });
     }
     return updated;
@@ -550,7 +569,7 @@ export class SheetsJobRepository implements JobRepository {
   }
 
   async addNote(jobId: string, text: string, currentUser: CurrentUser): Promise<ActivityLog> {
-    return this.appendLog({
+    const log = await this.appendLog({
       jobId,
       actor: currentUser.csId,
       timestamp: nowIso(),
@@ -558,6 +577,30 @@ export class SheetsJobRepository implements JobRepository {
       field: "note",
       newValue: text,
     });
+
+    // Parse @mentions → csIds, then notify the owner + any mentioned members.
+    try {
+      const job = await this.getJob(jobId);
+      if (job) {
+        const tokens = extractMentionTokens(text);
+        const team = await this.listTeam();
+        const mentioned = resolveMentionCsIds(tokens, team);
+        await notify("note_added", {
+          jobId,
+          customer: job.customer,
+          job,
+          newValue: text,
+          actor: currentUser.csId,
+          extra: { mentioned },
+        });
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[notify][note_added] mention resolution failed", error);
+      }
+    }
+
+    return log;
   }
 
   async listActivity(jobId: string): Promise<ActivityLog[]> {
