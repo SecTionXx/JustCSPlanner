@@ -22,7 +22,14 @@ import type {
   Todo,
   TodoPatch,
 } from "../types";
-import type { JobRepository, UpdateJobOptions } from "../repository";
+import type {
+  CreateTeamMemberInput,
+  CreateTemplateInput,
+  JobRepository,
+  TeamMemberPatch,
+  TemplatePatch,
+  UpdateJobOptions,
+} from "../repository";
 import { notify } from "../notify";
 import { isNearDeadline, isOverdue, nextJobId, nowIso } from "../utils";
 
@@ -133,6 +140,33 @@ async function findRowNumber(tab: TabName, key: string, value: string): Promise<
   return -1;
 }
 
+/** Find the 1-indexed sheet row number (incl. header) of the first row whose
+ *  two columns (key1, key2) equal (value1, value2). Used for Templates, whose
+ *  primary key is templateType + order. Returns -1 if not found. */
+async function findRowNumberByTwoCols(
+  tab: TabName,
+  key1: string,
+  value1: string,
+  key2: string,
+  value2: string,
+): Promise<number> {
+  const headers = HEADERS_LIST[tab];
+  const res = await client().spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${tab}!A2:Z`,
+  });
+  const rows = res.data.values ?? [];
+  const col1 = headers.indexOf(key1);
+  const col2 = headers.indexOf(key2);
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] ?? [];
+    if (String(row[col1] ?? "") === value1 && String(row[col2] ?? "") === value2) {
+      return i + 2; // +2: header + 1-index
+    }
+  }
+  return -1;
+}
+
 /** Lazily-built title → sheetId (gid) map from spreadsheets.get. */
 let _sheetIdCache: Record<string, number> | null = null;
 async function getSheetId(tab: TabName): Promise<number> {
@@ -152,14 +186,13 @@ async function getSheetId(tab: TabName): Promise<number> {
 }
 
 /**
- * Delete the first row whose `key` column equals `value` via batchUpdate
- * (deleteDimension). No-op if the row is not found.
+ * Delete the row at an absolute 1-indexed sheet row number (incl. header) via
+ * batchUpdate (deleteDimension). No-op if rowNumber is -1.
  */
-async function deleteRowByValue(tab: TabName, key: string, value: string): Promise<void> {
-  const rowNumber = await findRowNumber(tab, key, value);
+async function deleteRowByNumber(tab: TabName, rowNumber: number): Promise<void> {
   if (rowNumber === -1) return;
   const sheetId = await getSheetId(tab);
-  // findRowNumber is 1-indexed (incl. header); batchUpdate ranges are 0-indexed.
+  // rowNumber is 1-indexed (incl. header); batchUpdate ranges are 0-indexed.
   const startIndex = rowNumber - 1;
   await client().spreadsheets.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
@@ -178,6 +211,15 @@ async function deleteRowByValue(tab: TabName, key: string, value: string): Promi
       ],
     },
   });
+}
+
+/**
+ * Delete the first row whose `key` column equals `value` via batchUpdate
+ * (deleteDimension). No-op if the row is not found.
+ */
+async function deleteRowByValue(tab: TabName, key: string, value: string): Promise<void> {
+  const rowNumber = await findRowNumber(tab, key, value);
+  await deleteRowByNumber(tab, rowNumber);
 }
 
 function serialize(tab: TabName, obj: object): string[] {
@@ -206,6 +248,22 @@ function maxSeq(ids: string[], prefix: string, width: number): number {
     }
   }
   return max;
+}
+
+/**
+ * Derive a csId slug from displayName. Lowercases ascii runs; non-ascii names
+ * (e.g. Thai) yield an empty slug and fall back to `member-NN`. Collisions with
+ * existing ids also fall back to `member-NN` (next free sequence).
+ */
+function deriveCsId(displayName: string, existing: Set<string>): string {
+  const explicit = displayName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (explicit && !existing.has(explicit)) return explicit;
+  let n = 1;
+  while (existing.has(`member-${pad(n, 2)}`)) n++;
+  return `member-${pad(n, 2)}`;
 }
 
 // --- row ↔ object mappers ------------------------------------------------
@@ -493,6 +551,106 @@ export class SheetsJobRepository implements JobRepository {
   async listTemplates(type?: Template["templateType"]): Promise<Template[]> {
     const all = (await readTab("Templates")).map(toTemplate);
     return type ? all.filter((t) => t.templateType === type) : all;
+  }
+
+  async createTeamMember(
+    input: CreateTeamMemberInput,
+    currentUser: CurrentUser,
+  ): Promise<TeamMember> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const team = (await readTab("Team")).map(toTeam);
+    const existing = new Set(team.map((m) => m.csId));
+    const csId = input.csId?.trim()
+      ? input.csId.trim().toLowerCase()
+      : deriveCsId(input.displayName, existing);
+    if (existing.has(csId)) {
+      throw new Error(`csId ซ้ำ: ${csId}`);
+    }
+    const member: TeamMember = {
+      csId,
+      displayName: input.displayName,
+      role: input.role,
+      active: true,
+      email: input.email,
+    };
+    await appendRow("Team", serialize("Team", member));
+    return member;
+  }
+
+  async updateTeamMember(
+    csId: string,
+    patch: TeamMemberPatch,
+    currentUser: CurrentUser,
+  ): Promise<TeamMember> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const rowNumber = await findRowNumber("Team", "csId", csId);
+    if (rowNumber === -1) throw new Error(`TeamMember not found: ${csId}`);
+    const before = (await readTab("Team"))
+      .map(toTeam)
+      .find((m) => m.csId === csId);
+    if (!before) throw new Error(`TeamMember not found: ${csId}`);
+    const updated: TeamMember = { ...before, ...patch };
+    await writeRow("Team", rowNumber, serialize("Team", updated));
+    return updated;
+  }
+
+  async createTemplate(
+    input: CreateTemplateInput,
+    currentUser: CurrentUser,
+  ): Promise<Template> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const template: Template = {
+      templateType: input.templateType,
+      order: input.order,
+      todoTitle: input.todoTitle,
+      deadlineOffsetHours: input.deadlineOffsetHours,
+      notes: input.notes,
+    };
+    await appendRow("Templates", serialize("Templates", template));
+    return template;
+  }
+
+  async updateTemplate(
+    templateType: Template["templateType"],
+    order: number,
+    patch: TemplatePatch,
+    currentUser: CurrentUser,
+  ): Promise<Template> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const rowNumber = await findRowNumberByTwoCols(
+      "Templates",
+      "templateType",
+      templateType,
+      "order",
+      String(order),
+    );
+    if (rowNumber === -1) {
+      throw new Error(`Template not found: ${templateType} #${order}`);
+    }
+    const all = (await readTab("Templates")).map(toTemplate);
+    const before = all.find(
+      (t) => t.templateType === templateType && t.order === order,
+    );
+    if (!before) throw new Error(`Template not found: ${templateType} #${order}`);
+    const updated: Template = { ...before, ...patch };
+    await writeRow("Templates", rowNumber, serialize("Templates", updated));
+    return updated;
+  }
+
+  async deleteTemplate(
+    templateType: Template["templateType"],
+    order: number,
+    currentUser: CurrentUser,
+  ): Promise<void> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const rowNumber = await findRowNumberByTwoCols(
+      "Templates",
+      "templateType",
+      templateType,
+      "order",
+      String(order),
+    );
+    await deleteRowByNumber("Templates", rowNumber);
   }
 
   // --- internal ----------------------------------------------------------

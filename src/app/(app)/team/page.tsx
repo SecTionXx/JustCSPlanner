@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import {
   KpiCard,
@@ -8,6 +10,8 @@ import {
   type WorkloadKey,
   type WorkloadSegment,
 } from "@/components/shell";
+import { canViewAdmin } from "@/lib/auth/permissions";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { getRepository } from "@/lib/repository";
 import { isNearDeadline, isOverdue } from "@/lib/utils";
 import type { JobCard, TeamMember } from "@/lib/types";
@@ -61,7 +65,12 @@ function computeWorkload(member: TeamMember, jobs: JobCard[]): WorkloadEntry {
 
 export default async function TeamPage(): Promise<React.ReactElement> {
   const repo = getRepository();
-  const [allJobs, team] = await Promise.all([repo.listJobs(), repo.listTeam()]);
+  const [allJobs, team, currentUser] = await Promise.all([
+    repo.listJobs(),
+    repo.listTeam(),
+    getCurrentUser(),
+  ]);
+  const canAssign = canViewAdmin(currentUser);
 
   const activeJobs = allJobs.filter((j) => j.status !== "Completed");
   const newCount = allJobs.filter((j) => j.status === "New").length;
@@ -81,9 +90,15 @@ export default async function TeamPage(): Promise<React.ReactElement> {
         title="CS Team Dashboard"
         subtitle="ภาพรวม workload และงานเสี่ยงของทีม CS"
         actions={
-          <Button variant="outline" className="h-9 rounded-[9px] text-sm font-bold">
-            จัดสรรงาน
-          </Button>
+          canAssign ? (
+            <Button
+              render={<Link href="/assign" />}
+              variant="outline"
+              className="h-9 rounded-[9px] text-sm font-bold"
+            >
+              จัดสรรงาน
+            </Button>
+          ) : null
         }
       />
 

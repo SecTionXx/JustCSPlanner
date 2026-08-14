@@ -2,6 +2,7 @@
 // Pages and server actions consume `getRepository()`; the concrete backend
 // (mock now, Google Sheets later) is chosen via the DATA_BACKEND env var.
 
+import type { Role, ServiceType } from "./enums";
 import {
   MockJobRepository,
 } from "./mock/repository";
@@ -27,6 +28,33 @@ import type {
 export interface UpdateJobOptions {
   reason?: string;
 }
+
+/** Input for creating a TeamMember. csId is derived when omitted. */
+export interface CreateTeamMemberInput {
+  csId?: string;
+  displayName: string;
+  role: Role;
+  email?: string;
+}
+
+/** Patch shape for updateTeamMember. active:false deactivates a member. */
+export type TeamMemberPatch = Partial<
+  Pick<TeamMember, "displayName" | "role" | "email" | "active">
+>;
+
+/** Input for creating a Template row. PK is templateType + order. */
+export interface CreateTemplateInput {
+  templateType: ServiceType;
+  order: number;
+  todoTitle: string;
+  deadlineOffsetHours: number;
+  notes?: string;
+}
+
+/** Patch shape for updateTemplate. PK columns cannot be patched. */
+export type TemplatePatch = Partial<
+  Pick<Template, "todoTitle" | "deadlineOffsetHours" | "notes">
+>;
 
 export interface JobRepository {
   listJobs(filter?: JobFilter): Promise<JobCard[]>;
@@ -56,6 +84,39 @@ export interface JobRepository {
   listActivity(jobId: string): Promise<ActivityLog[]>;
   listTeam(): Promise<TeamMember[]>;
   listTemplates(type?: Template["templateType"]): Promise<Template[]>;
+  /**
+   * Append a TeamMember. When `input.csId` is omitted, a slug is derived from
+   * `displayName` (lowercase ascii, falling back to `member-NN` for non-ascii
+   * names like Thai). `active` defaults to TRUE.
+   */
+  createTeamMember(
+    input: CreateTeamMemberInput,
+    currentUser: CurrentUser,
+  ): Promise<TeamMember>;
+  /** Find a member by csId and apply the patch. Throws if not found. */
+  updateTeamMember(
+    csId: string,
+    patch: TeamMemberPatch,
+    currentUser: CurrentUser,
+  ): Promise<TeamMember>;
+  /** Append a Template row. PK is templateType + order. */
+  createTemplate(
+    input: CreateTemplateInput,
+    currentUser: CurrentUser,
+  ): Promise<Template>;
+  /** Patch a Template by its composite PK (templateType + order). Throws if missing. */
+  updateTemplate(
+    templateType: Template["templateType"],
+    order: number,
+    patch: TemplatePatch,
+    currentUser: CurrentUser,
+  ): Promise<Template>;
+  /** Delete a Template by its composite PK (templateType + order). No-op if missing. */
+  deleteTemplate(
+    templateType: Template["templateType"],
+    order: number,
+    currentUser: CurrentUser,
+  ): Promise<void>;
 }
 
 export type DataBackend = "mock" | "sheets";

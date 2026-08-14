@@ -24,7 +24,7 @@ function jobStripeTone(job: JobCard): "red" | "orange" {
 }
 
 export default async function DashboardPage(): Promise<React.ReactElement> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   const repo = getRepository();
 
   const [allJobs] = await Promise.all([repo.listJobs()]);

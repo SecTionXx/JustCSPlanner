@@ -41,6 +41,7 @@ const TEAM_ROWS = [
   ["may", "เมย์", "cs_owner", "TRUE", "may@example.com"],
   ["nina", "นีน่า", "cs_assistant", "TRUE", "nina@example.com"],
   ["somchai", "สมชาย", "requester", "TRUE", "somchai@example.com"],
+  ["pan", "แพน", "admin", "TRUE", "pan@example.com"],
 ];
 
 const TEMPLATE_ROWS = [

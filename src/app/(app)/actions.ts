@@ -1,9 +1,22 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { DEV_USERS, getCurrentUser } from "@/lib/auth/current-user";
+import {
+  canAddNote,
+  canAddTodo,
+  canChangeDeadline,
+  canChangeStatus,
+  canCloseJob,
+  canCreateJob,
+  canDeleteTodo,
+  canEditJob,
+  canReassign,
+  canToggleTodo,
+} from "@/lib/auth/permissions";
 import { getRepository } from "@/lib/repository";
 import type { UpdateJobOptions } from "@/lib/repository";
 import {
@@ -39,13 +52,46 @@ function asStringList(raw: string): string[] {
     .filter(Boolean);
 }
 
+/** Throw a bilingual permission error when the check fails. */
+function assertCan(allowed: boolean, label = ""): void {
+  if (!allowed) {
+    throw new Error(
+      label
+        ? `ไม่มีสิทธิ์ดำเนินการ: ${label}`
+        : "ไม่มีสิทธิ์ดำเนินการ (No permission)",
+    );
+  }
+}
+
+const DEV_USER_COOKIE = "dev_user";
+const DEV_COOKIE_MAX_AGE = 60 * 60 * 24;
+
+/**
+ * Dev-only role switcher: sets the `dev_user` cookie so getCurrentUser()
+ * resolves to the chosen user on the next request. Validates csId against
+ * DEV_USERS.
+ */
+export async function switchDevUser(csId: string): Promise<void> {
+  if (!DEV_USERS[csId]) {
+    throw new Error(`Unknown dev user: ${csId}`);
+  }
+  const store = await cookies();
+  store.set(DEV_USER_COOKIE, csId, {
+    httpOnly: false,
+    sameSite: "lax",
+    maxAge: DEV_COOKIE_MAX_AGE,
+    path: "/",
+  });
+}
+
 /**
  * Create a new Job Card. Reads FormData from the create-job form, validates
  * required fields, and seeds template To-dos + activity via the repository.
  * On success revalidates /jobs and redirects there.
  */
 export async function createJob(formData: FormData): Promise<never> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
+  assertCan(canCreateJob(user), "สร้างงาน");
   const repo = getRepository();
 
   const customer = requireString("ชื่อลูกค้า", asString(formData.get("customer")));
@@ -119,8 +165,15 @@ export async function updateJobStatus(
   status: JobStatus,
   reason?: string,
 ): Promise<void> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   const repo = getRepository();
+  const job = await repo.getJob(jobId);
+  if (!job) throw new Error("ไม่พบงานที่ต้องการอัปเดต");
+  if (status === "Completed") {
+    assertCan(canCloseJob(user, job), "ปิดงาน");
+  } else {
+    assertCan(canChangeStatus(user, job), "เปลี่ยนสถานะ");
+  }
   await repo.updateJob(jobId, { status }, user, reason ? { reason } : undefined);
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/jobs");
@@ -135,8 +188,11 @@ export async function toggleTodo(
   done: boolean,
   jobId: string,
 ): Promise<void> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   const repo = getRepository();
+  const job = await repo.getJob(jobId);
+  if (!job) throw new Error("ไม่พบงานที่ต้องการอัปเดต");
+  assertCan(canToggleTodo(user, job), "ทำเครื่องหมาย To-do");
   await repo.updateTodo(
     todoId,
     { status: done ? "Done" : "Not Started" },
@@ -155,8 +211,23 @@ export async function editJob(
   patch: JobPatch,
   options?: UpdateJobOptions,
 ): Promise<void> {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   const repo = getRepository();
+  const job = await repo.getJob(jobId);
+  if (!job) throw new Error("ไม่พบงานที่ต้องการแก้ไข");
+
+  const ownerChanged = patch.owner !== undefined && patch.owner !== job.owner;
+  const deadlineChanged =
+    patch.deadline !== undefined && patch.deadline !== job.deadline;
+
+  if (ownerChanged) {
+    assertCan(canReassign(user), "เปลี่ยนเจ้าของงาน");
+  } else if (deadlineChanged) {
+    assertCan(canChangeDeadline(user), "เปลี่ยน Deadline");
+  } else {
+    assertCan(canEditJob(user, job), "แก้ไขงาน");
+  }
+
   await repo.updateJob(jobId, patch, user, options);
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/jobs");
@@ -177,8 +248,11 @@ export async function addTodo(
   if (!trimmedTitle) throw new Error("กรุณาระบุชื่อ To-do");
   if (!trimmedAssignee) throw new Error("กรุณาระบุผู้รับมอบหมาย");
 
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   const repo = getRepository();
+  const job = await repo.getJob(jobId);
+  if (!job) throw new Error("ไม่พบงานที่ต้องการเพิ่ม To-do");
+  assertCan(canAddTodo(user, job), "เพิ่ม To-do");
   await repo.createTodo(
     { jobId, title: trimmedTitle, assignee: trimmedAssignee, source: "Assigned", deadline },
     user,
@@ -193,7 +267,11 @@ export async function deleteTodoAction(
   todoId: string,
   jobId: string,
 ): Promise<void> {
+  const user = await getCurrentUser();
   const repo = getRepository();
+  const job = await repo.getJob(jobId);
+  if (!job) throw new Error("ไม่พบงานที่ต้องการลบ To-do");
+  assertCan(canDeleteTodo(user, job), "ลบ To-do");
   await repo.deleteTodo(todoId);
   revalidatePath(`/jobs/${jobId}`);
 }
@@ -205,7 +283,8 @@ export async function addComment(jobId: string, text: string): Promise<void> {
   const trimmed = text.trim();
   if (!trimmed) throw new Error("กรุณาระบุข้อความคอมเมนต์");
 
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
+  assertCan(canAddNote(user), "เพิ่มคอมเมนต์");
   const repo = getRepository();
   await repo.addNote(jobId, trimmed, user);
   revalidatePath(`/jobs/${jobId}`);

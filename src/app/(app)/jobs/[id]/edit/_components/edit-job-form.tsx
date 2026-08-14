@@ -27,6 +27,10 @@ import { editJob } from "../../../../actions";
 export interface EditJobFormProps {
   job: JobCard;
   team: TeamMember[];
+  /** Whether the user may change the job owner (lead/admin). */
+  canReassign: boolean;
+  /** Whether the user may change the deadline (lead/admin). */
+  canChangeDeadline: boolean;
 }
 
 const STATUS_OPTIONS: { value: JobStatus; label: string }[] = JOB_STATUSES.map(
@@ -66,6 +70,8 @@ function orUndefined(value: string): string | undefined {
 export function EditJobForm({
   job,
   team,
+  canReassign,
+  canChangeDeadline,
 }: EditJobFormProps): React.ReactElement {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
@@ -173,6 +179,7 @@ export function EditJobForm({
             required
             value={form.owner}
             onChange={(e) => update("owner", e.target.value)}
+            disabled={!canReassign}
             className={cn(INPUT_CLASS, "rounded-md border bg-white px-2.5")}
             style={{ borderColor: "var(--border)" }}
           >
@@ -194,6 +201,7 @@ export function EditJobForm({
             required
             value={form.deadline}
             onChange={(e) => update("deadline", e.target.value)}
+            disabled={!canChangeDeadline}
             className={INPUT_CLASS}
           />
         </div>

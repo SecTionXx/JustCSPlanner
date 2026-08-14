@@ -1,5 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { canChangeDeadline, canEditJob, canReassign } from "@/lib/auth/permissions";
 import { getRepository } from "@/lib/repository";
 
 import { PageHeader, Panel } from "../../../_components/field";
@@ -17,10 +19,22 @@ export default async function EditJobPage({
   const { id } = await params;
   const repo = getRepository();
 
-  const [job, team] = await Promise.all([repo.getJob(id), repo.listTeam()]);
+  const [job, team, currentUser] = await Promise.all([
+    repo.getJob(id),
+    repo.listTeam(),
+    getCurrentUser(),
+  ]);
   if (!job) notFound();
 
+  // Base edit access. Owner/deadline changes are further gated on the form
+  // (and enforced server-side in editJob).
+  if (!canEditJob(currentUser, job)) {
+    redirect(`/jobs/${id}`);
+  }
+
   const activeTeam = team.filter((m) => m.active);
+  const userCanReassign = canReassign(currentUser);
+  const userCanChangeDeadline = canChangeDeadline(currentUser);
 
   return (
     <>
@@ -37,7 +51,12 @@ export default async function EditJobPage({
       />
       <div className="px-6 pt-4 pb-8">
         <Panel>
-          <EditJobForm job={job} team={activeTeam} />
+          <EditJobForm
+            job={job}
+            team={activeTeam}
+            canReassign={userCanReassign}
+            canChangeDeadline={userCanChangeDeadline}
+          />
         </Panel>
       </div>
     </>

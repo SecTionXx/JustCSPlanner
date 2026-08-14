@@ -7,6 +7,8 @@ import {
   PersonaAvatar,
   StatusBadge,
 } from "@/components/shell";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { canEditJob } from "@/lib/auth/permissions";
 import { getRepository } from "@/lib/repository";
 import { formatDateTime, isNearDeadline, isOverdue } from "@/lib/utils";
 import type { ActivityLog } from "@/lib/types";
@@ -56,14 +58,17 @@ export default async function JobDetailPage({
   const { id } = await params;
   const repo = getRepository();
 
-  const [job, todos, activity, team] = await Promise.all([
+  const [job, todos, activity, team, currentUser] = await Promise.all([
     repo.getJob(id),
     repo.listTodos(id),
     repo.listActivity(id),
     repo.listTeam(),
+    getCurrentUser(),
   ]);
 
   if (!job) notFound();
+
+  const userCanEditJob = canEditJob(currentUser, job);
 
   const owner = team.find((m) => m.csId === job.owner);
   const ownerName = owner?.displayName ?? job.owner;
@@ -107,13 +112,15 @@ export default async function JobDetailPage({
         }
         subtitle={`${job.customer}${job.route ? ` · ${job.route}` : ""}`}
         actions={
-          <Button
-            render={<Link href={`/jobs/${id}/edit`} />}
-            variant="outline"
-            className="h-9 rounded-[9px] text-sm font-bold"
-          >
-            ✎ แก้ไขงาน
-          </Button>
+          userCanEditJob ? (
+            <Button
+              render={<Link href={`/jobs/${id}/edit`} />}
+              variant="outline"
+              className="h-9 rounded-[9px] text-sm font-bold"
+            >
+              ✎ แก้ไขงาน
+            </Button>
+          ) : null
         }
       />
 
@@ -165,6 +172,7 @@ export default async function JobDetailPage({
               todos={todos}
               ownerName={ownerName}
               team={team}
+              canManage={userCanEditJob}
             />
           </Panel>
 

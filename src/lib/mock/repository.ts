@@ -19,7 +19,11 @@ import type {
   TodoPatch,
 } from "../types";
 import type {
+  CreateTeamMemberInput,
+  CreateTemplateInput,
   JobRepository,
+  TeamMemberPatch,
+  TemplatePatch,
   UpdateJobOptions,
 } from "../repository";
 import { notify } from "../notify";
@@ -55,6 +59,22 @@ function maxSeq(ids: string[], prefix: string, width: number): number {
 
 function pad(n: number, width: number): string {
   return String(n).padStart(width, "0");
+}
+
+/**
+ * Derive a csId slug from displayName. Lowercases ascii runs; non-ascii names
+ * (e.g. Thai) yield an empty slug and fall back to `member-NN`. Collisions with
+ * existing ids also fall back to `member-NN` (next free sequence).
+ */
+function deriveCsId(displayName: string, existing: Set<string>): string {
+  const explicit = displayName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (explicit && !existing.has(explicit)) return explicit;
+  let n = 1;
+  while (existing.has(`member-${pad(n, 2)}`)) n++;
+  return `member-${pad(n, 2)}`;
 }
 
 function appendLog(entry: Omit<ActivityLog, "logId">): ActivityLog {
@@ -323,6 +343,91 @@ export class MockJobRepository implements JobRepository {
   async listTemplates(type?: Template["templateType"]): Promise<Template[]> {
     const all = clone(store.templates);
     return type ? all.filter((t) => t.templateType === type) : all;
+  }
+
+  async createTeamMember(
+    input: CreateTeamMemberInput,
+    currentUser: CurrentUser,
+  ): Promise<TeamMember> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const existing = new Set(store.team.map((m) => m.csId));
+    const csId = input.csId?.trim()
+      ? input.csId.trim().toLowerCase()
+      : deriveCsId(input.displayName, existing);
+    if (existing.has(csId)) {
+      throw new Error(`csId ซ้ำ: ${csId}`);
+    }
+    const member: TeamMember = {
+      csId,
+      displayName: input.displayName,
+      role: input.role,
+      active: true,
+      email: input.email,
+    };
+    store.team.push(member);
+    return clone(member);
+  }
+
+  async updateTeamMember(
+    csId: string,
+    patch: TeamMemberPatch,
+    currentUser: CurrentUser,
+  ): Promise<TeamMember> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const idx = store.team.findIndex((m) => m.csId === csId);
+    if (idx === -1) throw new Error(`TeamMember not found: ${csId}`);
+    const before = store.team[idx];
+    if (!before) throw new Error(`TeamMember not found: ${csId}`);
+    const updated: TeamMember = { ...before, ...patch };
+    store.team[idx] = updated;
+    return clone(updated);
+  }
+
+  async createTemplate(
+    input: CreateTemplateInput,
+    currentUser: CurrentUser,
+  ): Promise<Template> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const template: Template = {
+      templateType: input.templateType,
+      order: input.order,
+      todoTitle: input.todoTitle,
+      deadlineOffsetHours: input.deadlineOffsetHours,
+      notes: input.notes,
+    };
+    store.templates.push(template);
+    return clone(template);
+  }
+
+  async updateTemplate(
+    templateType: Template["templateType"],
+    order: number,
+    patch: TemplatePatch,
+    currentUser: CurrentUser,
+  ): Promise<Template> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    const idx = store.templates.findIndex(
+      (t) => t.templateType === templateType && t.order === order,
+    );
+    if (idx === -1) {
+      throw new Error(`Template not found: ${templateType} #${order}`);
+    }
+    const before = store.templates[idx];
+    if (!before) throw new Error(`Template not found: ${templateType} #${order}`);
+    const updated: Template = { ...before, ...patch };
+    store.templates[idx] = updated;
+    return clone(updated);
+  }
+
+  async deleteTemplate(
+    templateType: Template["templateType"],
+    order: number,
+    currentUser: CurrentUser,
+  ): Promise<void> {
+    void currentUser; // actor reserved for future audit (ActivityLog is job-scoped)
+    store.templates = store.templates.filter(
+      (t) => !(t.templateType === templateType && t.order === order),
+    );
   }
 
   // --- internal helpers ----------------------------------------------------

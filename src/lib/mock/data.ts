@@ -67,6 +67,13 @@ export const team: TeamMember[] = [
     active: true,
     email: "somchai@example.com",
   },
+  {
+    csId: "pan",
+    displayName: "แพน",
+    role: "admin",
+    active: true,
+    email: "pan@example.com",
+  },
 ];
 
 // --- JobCards (schema §1) ---------------------------------------------------

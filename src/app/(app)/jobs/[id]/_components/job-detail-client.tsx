@@ -26,6 +26,13 @@ export interface JobDetailClientProps {
   todos: Todo[];
   ownerName: string;
   team: TeamMember[];
+  /**
+   * Whether the current user may mutate this job (change status, close,
+   * add/toggle/delete todos). Derived server-side from the permission policy
+   * (canManageJob): requester ✗; cs_owner ✓ if owner/backup; cs_assistant ✓ if
+   * backup; lead/admin ✓ any.
+   */
+  canManage: boolean;
 }
 
 const STATUS_ACTIONS: { label: string; status: JobStatus; variant?: "default" | "outline"; confirm?: boolean }[] = [
@@ -43,6 +50,7 @@ export function JobDetailClient({
   todos,
   ownerName,
   team,
+  canManage,
 }: JobDetailClientProps): React.ReactElement {
   const todoItems = todos
     .slice()
@@ -52,7 +60,9 @@ export function JobDetailClient({
       title: (
         <span className="inline-flex flex-1 items-center justify-between gap-2">
           <span>{t.title}</span>
-          <TodoDeleteButton todoId={t.todoId} jobId={jobId} />
+          {canManage ? (
+            <TodoDeleteButton todoId={t.todoId} jobId={jobId} />
+          ) : null}
         </span>
       ),
       done: t.status === "Done",
@@ -68,21 +78,23 @@ export function JobDetailClient({
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        {STATUS_ACTIONS.filter((a) => a.status !== status).map((action) => (
-          <StatusActionButton
-            key={`${action.label}-${action.status}`}
-            action={action}
-            jobId={jobId}
-          />
-        ))}
+        {canManage
+          ? STATUS_ACTIONS.filter((a) => a.status !== status).map((action) => (
+              <StatusActionButton
+                key={`${action.label}-${action.status}`}
+                action={action}
+                jobId={jobId}
+              />
+            ))
+          : null}
         <span className="ml-auto self-center text-[11px] text-muted-foreground">
           เจ้าของงาน: <strong className="text-foreground">{ownerName}</strong>
         </span>
       </div>
 
       <div className="mt-4">
-        <TodoList items={todoItems} onToggle={handleToggle}>
-          <AddTodoComposer jobId={jobId} team={team} />
+        <TodoList items={todoItems} onToggle={canManage ? handleToggle : undefined}>
+          {canManage ? <AddTodoComposer jobId={jobId} team={team} /> : null}
         </TodoList>
       </div>
     </>
