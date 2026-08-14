@@ -74,3 +74,11 @@ export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
 /** Notifications.channel — schema §6 */
 export const NOTIFICATION_CHANNELS = ["in-app", "email", "line"] as const;
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
+
+/** EmailInbox.source — schema §6 */
+export const EMAIL_SOURCES = ["paste", "webhook"] as const;
+export type EmailSource = (typeof EMAIL_SOURCES)[number];
+
+/** EmailInbox.status — schema §6 */
+export const EMAIL_INBOX_STATUSES = ["new", "linked", "converted", "ignored"] as const;
+export type EmailInboxStatus = (typeof EMAIL_INBOX_STATUSES)[number];

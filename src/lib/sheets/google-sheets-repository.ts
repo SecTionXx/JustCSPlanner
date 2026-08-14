@@ -11,10 +11,13 @@ import { google } from "googleapis";
 import type { ActivityEvent } from "../enums";
 import type {
   ActivityLog,
+  CreateEmailInput,
   CreateJobInput,
   CreateNotificationInput,
   CreateTodoInput,
   CurrentUser,
+  EmailInbox,
+  EmailPatch,
   JobCard,
   JobFilter,
   JobPatch,
@@ -66,6 +69,10 @@ const HEADERS = {
   Notifications: [
     "notifId", "jobId", "recipientCsId", "event", "channel", "subject", "body",
     "status", "createdAt", "readAt",
+  ],
+  EmailInbox: [
+    "emailId", "fromAddress", "subject", "body", "receivedAt", "source",
+    "matchedJobId", "status", "handledBy", "handledAt",
   ],
 } as const;
 
@@ -359,6 +366,20 @@ function toNotification(r: Row): Notification {
     status: r.status as Notification["status"],
     createdAt: r.createdAt,
     readAt: r.readAt || undefined,
+  };
+}
+function toEmailInbox(r: Row): EmailInbox {
+  return {
+    emailId: r.emailId,
+    fromAddress: r.fromAddress,
+    subject: r.subject,
+    body: r.body || undefined,
+    receivedAt: r.receivedAt,
+    source: r.source as EmailInbox["source"],
+    matchedJobId: r.matchedJobId || undefined,
+    status: r.status as EmailInbox["status"],
+    handledBy: r.handledBy || undefined,
+    handledAt: r.handledAt || undefined,
   };
 }
 
@@ -757,6 +778,43 @@ export class SheetsJobRepository implements JobRepository {
     if (!before) return;
     const updated: Notification = { ...before, status: "read", readAt: nowIso() };
     await writeRow("Notifications", rowNumber, serialize("Notifications", updated));
+  }
+
+  async listEmails(status?: EmailInbox["status"]): Promise<EmailInbox[]> {
+    const result = (await readTab("EmailInbox")).map(toEmailInbox);
+    return status ? result.filter((e) => e.status === status) : result;
+  }
+
+  async appendEmail(input: CreateEmailInput): Promise<EmailInbox> {
+    const existing = (await readTab("EmailInbox")).map((r) => r.emailId);
+    const next = maxSeq(existing, "EMAIL", 6) + 1;
+    const email: EmailInbox = {
+      emailId: `EMAIL-${pad(next, 6)}`,
+      fromAddress: input.fromAddress,
+      subject: input.subject,
+      body: input.body,
+      receivedAt: nowIso(),
+      source: input.source,
+      status: "new",
+    };
+    await appendRow("EmailInbox", serialize("EmailInbox", email));
+    return email;
+  }
+
+  async updateEmailStatus(
+    emailId: string,
+    patch: EmailPatch,
+    currentUser: CurrentUser,
+  ): Promise<void> {
+    void currentUser; // handledBy/handledAt are caller-supplied in the patch
+    const rowNumber = await findRowNumber("EmailInbox", "emailId", emailId);
+    if (rowNumber === -1) throw new Error(`Email not found: ${emailId}`);
+    const before = (await readTab("EmailInbox"))
+      .map(toEmailInbox)
+      .find((e) => e.emailId === emailId);
+    if (!before) throw new Error(`Email not found: ${emailId}`);
+    const updated: EmailInbox = { ...before, ...patch };
+    await writeRow("EmailInbox", rowNumber, serialize("EmailInbox", updated));
   }
 
   // --- internal ----------------------------------------------------------

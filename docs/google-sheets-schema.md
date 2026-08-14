@@ -143,6 +143,12 @@
 **`Notifications.status`**:
 `sent` · `failed` · `read`
 
+**`EmailInbox.source`**:
+`paste` · `webhook`
+
+**`EmailInbox.status`**:
+`new` · `linked` · `converted` · `ignored`
+
 > ⚠️ ค่าเหล่านี้ต้องตรงทั้งใน dropdown ของ Sheet และในโค้ด Next.js — ถ้าเปลี่ยน ต้องเปลี่ยนพร้อมกันทั้งสองฝั่ง
 
 ---
@@ -174,3 +180,24 @@
 | J | `readAt` | ISO datetime (ว่างถ้ายังไม่อ่าน) | |
 
 **หมายเหตุ**: append-only — ห้ามแก้แถวเดิม ยกเว้นการ mark `status` → `read` พร้อม stamp `readAt` (กระทำผ่าน `markNotificationRead`)
+
+---
+
+## 9. Sheet `EmailInbox` (อีเมลเข้า — พื้นที่รอเชื่อมงาน)
+
+Staging area สำหรับอีเมลเข้า (P3.3) — พนักงานวางข้อความเอง (`paste`) หรือรับจาก webhook (`webhook` — `POST /api/email-inbound` ป้องกันด้วย `INBOUND_SECRET`) แล้วเชื่อมเข้างานที่มีอยู่ หรือแปลงเป็นร่างงานใหม่ทีละฉบับ
+
+| คอลัมน์ | ชื่อ field | ชนิด/รูปแบบ | ตัวอย่าง |
+|---|---|---|---|
+| A | `emailId` | string `EMAIL-NNNNNN` | `EMAIL-000001` |
+| B | `fromAddress` | string (อีเมลผู้ส่ง) | `customer@lch.co.th` |
+| C | `subject` | string | `Re: Booking BK-12345 — ส่ง SI แล้ว` |
+| D | `body` | string (เนื้อความเต็ม อาจหลายบรรทัด) | `เรียน CS...\nแนบ SI ตาม booking ข้างต้น` |
+| E | `receivedAt` | ISO datetime | `2026-08-14T09:30:00+07:00` |
+| F | `source` | enum: `paste` / `webhook` | `paste` |
+| G | `matchedJobId` | string (FK → `JobCards.jobId`, อาจว่าง) | `JOB-2026-0001` |
+| H | `status` | enum: `new` / `linked` / `converted` / `ignored` | `new` |
+| I | `handledBy` | string (FK → `Team.csId`, อาจว่าง) | `jantana` |
+| J | `handledAt` | ISO datetime (ว่างถ้ายังไม่จัดการ) | |
+
+**หมายเหตุ**: `emailId` และ `receivedAt` สร้างโดยโค้ดฝั่ง server เสมอ (ผ่าน `appendEmail`) — เมื่อเชื่อมงาน (`เชื่อมกับงาน`) ระบบจะ append แถว `note_added` ลง `ActivityLog` ของงานนั้นพร้อม stamp `matchedJobId` / `handledBy` / `handledAt`

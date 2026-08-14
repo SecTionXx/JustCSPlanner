@@ -7,10 +7,13 @@ import type {
 } from "../enums";
 import type {
   ActivityLog,
+  CreateEmailInput,
   CreateJobInput,
   CreateNotificationInput,
   CreateTodoInput,
   CurrentUser,
+  EmailInbox,
+  EmailPatch,
   JobCard,
   JobFilter,
   JobPatch,
@@ -41,6 +44,7 @@ const store = {
   team: structuredClone(seedTeam) as TeamMember[],
   templates: structuredClone(seedTemplates) as Template[],
   notifications: [] as Notification[],
+  emails: [] as EmailInbox[],
 };
 
 /** Deep clone helper — keeps mock state private. */
@@ -529,6 +533,39 @@ export class MockJobRepository implements JobRepository {
     const before = store.notifications[idx];
     if (!before) return;
     store.notifications[idx] = { ...before, status: "read", readAt: nowIso() };
+  }
+
+  async listEmails(status?: EmailInbox["status"]): Promise<EmailInbox[]> {
+    const result = clone(store.emails);
+    return status ? result.filter((e) => e.status === status) : result;
+  }
+
+  async appendEmail(input: CreateEmailInput): Promise<EmailInbox> {
+    const next = maxSeq(store.emails.map((e) => e.emailId), "EMAIL", 6) + 1;
+    const email: EmailInbox = {
+      emailId: `EMAIL-${pad(next, 6)}`,
+      fromAddress: input.fromAddress,
+      subject: input.subject,
+      body: input.body,
+      receivedAt: nowIso(),
+      source: input.source,
+      status: "new",
+    };
+    store.emails.push(email);
+    return clone(email);
+  }
+
+  async updateEmailStatus(
+    emailId: string,
+    patch: EmailPatch,
+    currentUser: CurrentUser,
+  ): Promise<void> {
+    void currentUser; // handledBy/handledAt are caller-supplied in the patch
+    const idx = store.emails.findIndex((e) => e.emailId === emailId);
+    if (idx === -1) throw new Error(`Email not found: ${emailId}`);
+    const before = store.emails[idx];
+    if (!before) throw new Error(`Email not found: ${emailId}`);
+    store.emails[idx] = { ...before, ...patch };
   }
 
   // --- internal helpers ----------------------------------------------------

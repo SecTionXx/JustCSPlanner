@@ -4,6 +4,8 @@
 
 import type {
   ActivityEvent,
+  EmailInboxStatus,
+  EmailSource,
   JobStatus,
   NotificationChannel,
   NotificationStatus,
@@ -180,3 +182,32 @@ export interface CreateNotificationInput {
   /** Defaults to "sent". */
   status?: NotificationStatus;
 }
+
+/** EmailInbox row — schema §9. Staging area for inbound emails. */
+export interface EmailInbox {
+  emailId: string; // EMAIL-NNNNNN
+  fromAddress: string;
+  subject: string;
+  body?: string;
+  receivedAt: string;
+  source: EmailSource;
+  /** FK → JobCards.jobId. Set when the email is linked/converted. */
+  matchedJobId?: string;
+  status: EmailInboxStatus;
+  /** FK → TeamMember.csId (who handled the email). */
+  handledBy?: string;
+  handledAt?: string;
+}
+
+/** Input for appending an inbound email (emailId/receivedAt/status generated server-side). */
+export interface CreateEmailInput {
+  fromAddress: string;
+  subject: string;
+  body?: string;
+  source: EmailSource;
+}
+
+/** Patch shape for updateEmailStatus — the handling columns only. */
+export type EmailPatch = Partial<
+  Pick<EmailInbox, "status" | "matchedJobId" | "handledBy" | "handledAt">
+>;

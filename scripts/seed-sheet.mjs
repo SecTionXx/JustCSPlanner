@@ -37,6 +37,10 @@ const TABS = {
     "notifId", "jobId", "recipientCsId", "event", "channel", "subject", "body",
     "status", "createdAt", "readAt",
   ],
+  EmailInbox: [
+    "emailId", "fromAddress", "subject", "body", "receivedAt", "source",
+    "matchedJobId", "status", "handledBy", "handledAt",
+  ],
 };
 
 const TEAM_ROWS = [
@@ -138,4 +142,4 @@ if ((await rowCount("Templates")) === 0) {
   console.log("Templates already has data — skipped.");
 }
 
-console.log("\n✅ Done. JobCards/Todos/ActivityLog are empty — fill them via the app.");
+console.log("\n✅ Done. JobCards/Todos/ActivityLog/EmailInbox are empty — fill them via the app.");

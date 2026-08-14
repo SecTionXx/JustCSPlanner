@@ -11,6 +11,8 @@ export interface FileChipsProps {
   files: AttachedFile[]
   /** label for the upload pill */
   uploadLabel?: string
+  /** render the (decorative) trailing upload pill. Default true. */
+  showUploadPill?: boolean
   className?: string
 }
 
@@ -20,6 +22,7 @@ export interface FileChipsProps {
 export function FileChips({
   files,
   uploadLabel = "+ อัปโหลดไฟล์",
+  showUploadPill = true,
   className,
 }: FileChipsProps): React.ReactElement {
   return (
@@ -52,9 +55,11 @@ export function FileChips({
           </span>
         )
       })}
-      <span className="inline-flex items-center rounded-[7px] border border-[#cdebd9] bg-[#e1f7ec] px-2.5 py-1 text-xs font-semibold text-[#177a55]">
-        {uploadLabel}
-      </span>
+      {showUploadPill ? (
+        <span className="inline-flex items-center rounded-[7px] border border-[#cdebd9] bg-[#e1f7ec] px-2.5 py-1 text-xs font-semibold text-[#177a55]">
+          {uploadLabel}
+        </span>
+      ) : null}
     </div>
   )
 }

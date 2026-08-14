@@ -9,10 +9,13 @@ import {
 import { SheetsJobRepository } from "./sheets/google-sheets-repository";
 import type {
   ActivityLog,
+  CreateEmailInput,
   CreateJobInput,
   CreateNotificationInput,
   CreateTodoInput,
   CurrentUser,
+  EmailInbox,
+  EmailPatch,
   JobCard,
   JobFilter,
   JobPatch,
@@ -131,6 +134,25 @@ export interface JobRepository {
   listNotifications(recipientCsId?: string, unreadOnly?: boolean): Promise<Notification[]>;
   /** Set a notification's status to "read" and stamp readAt. No-op if missing. */
   markNotificationRead(notifId: string): Promise<void>;
+  /**
+   * List staged inbound emails. When `status` is given, only rows with that
+   * status are returned.
+   */
+  listEmails(status?: EmailInbox["status"]): Promise<EmailInbox[]>;
+  /**
+   * Append an inbound email to the staging area (paste or webhook). The
+   * emailId, receivedAt and the initial status "new" are generated server-side.
+   */
+  appendEmail(input: CreateEmailInput): Promise<EmailInbox>;
+  /**
+   * Patch an email's handling columns (status / matchedJobId / handledBy /
+   * handledAt). Throws if the email is not found.
+   */
+  updateEmailStatus(
+    emailId: string,
+    patch: EmailPatch,
+    currentUser: CurrentUser,
+  ): Promise<void>;
 }
 
 export type DataBackend = "mock" | "sheets";

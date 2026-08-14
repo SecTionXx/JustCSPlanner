@@ -16,6 +16,7 @@ import type { ActivityLog } from "@/lib/types";
 import { Field, PageHeader, Panel } from "../../_components/field";
 import { JobCommentsClient } from "./_components/job-comments-client";
 import { JobDetailClient } from "./_components/job-detail-client";
+import { UploadFiles } from "./_components/upload-files";
 
 export const dynamic = "force-dynamic";
 
@@ -180,9 +181,15 @@ export default async function JobDetailPage({
             <JobCommentsClient jobId={job.jobId} comments={notes} />
           </Panel>
 
-          {docs.length > 0 ? (
+          {docs.length > 0 || userCanEditJob ? (
             <Panel title="เอกสารแนบ">
-              <FileChips files={docs} />
+              <div className="flex flex-wrap items-center gap-2">
+                {docs.length > 0 ? (
+                  <FileChips files={docs} showUploadPill={false} />
+                ) : null}
+                {/* Real upload → Drive; manual paste-links stay in the edit form. */}
+                {userCanEditJob ? <UploadFiles jobId={job.jobId} /> : null}
+              </div>
             </Panel>
           ) : null}
         </div>

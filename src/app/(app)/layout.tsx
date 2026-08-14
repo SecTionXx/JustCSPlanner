@@ -15,12 +15,14 @@ const PRIMARY_NAV: NavItem[] = [
   { icon: "📦", label: "Job Card", href: "/jobs/new" },
   { icon: "🚨", label: "งานเสี่ยง", href: "/risk" },
   { icon: "👥", label: "ทีม CS", href: "/team" },
+  { icon: "✨", label: "ถาม AI", href: "/ai" },
 ];
 
 // Admin/lead-only nav. Appended to PRIMARY_NAV only when canViewAdmin.
 const ADMIN_NAV: NavItem[] = [
   { icon: "🗂️", label: "จัดสรรงาน", href: "/assign" },
   { icon: "📊", label: "รายงาน", href: "/reports" },
+  { icon: "📥", label: "กล่องอีเมล", href: "/admin/inbox" },
   { icon: "👤", label: "จัดการทีม", href: "/admin/team" },
   { icon: "📝", label: "เทมเพลต", href: "/admin/templates" },
 ];
