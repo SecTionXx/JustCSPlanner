@@ -39,3 +39,6 @@ service-account.json
 
 # playwright mcp screenshots (local)
 .playwright-mcp/
+
+# vitest coverage report (generated)
+coverage/
