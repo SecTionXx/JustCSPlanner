@@ -1,7 +1,12 @@
 import * as React from "react";
 import Link from "next/link";
+import { ArrowRight, MoveRight } from "lucide-react";
 
-import { StatusBadge } from "@/components/shell";
+import {
+  PersonaAvatar,
+  PriorityBadge,
+  StatusBadge,
+} from "@/components/shell";
 import {
   cn,
   daysUntil,
@@ -35,10 +40,10 @@ function deadlineMeta(job: JobCard): {
   return { label: formatted, tone: "default" };
 }
 
-const PRIORITY_TONE: Record<JobCard["priority"], string> = {
-  Normal: "#788397",
-  High: "#d27b1c",
-  Critical: "#c43850",
+const DEADLINE_TONE: Record<"default" | "warn" | "danger", string> = {
+  default: "bg-muted text-muted-foreground",
+  warn: "bg-tone-warning-soft text-tone-warning font-semibold",
+  danger: "bg-tone-danger-soft text-tone-danger font-semibold",
 };
 
 /**
@@ -46,68 +51,102 @@ const PRIORITY_TONE: Record<JobCard["priority"], string> = {
  */
 export function JobCardItem({ job, className }: JobCardItemProps): React.ReactElement {
   const meta = deadlineMeta(job);
-  const stripeColor = meta.tone === "danger" ? "#f1687e" : meta.tone === "warn" ? "#fb923c" : "transparent";
 
   return (
     <Link
       href={`/jobs/${job.jobId}`}
       className={cn(
-        "block rounded-[14px] border bg-white p-4 transition-colors hover:border-[#c9bcf4]",
+        "block rounded-[14px] border bg-card text-card-foreground p-4 transition-colors hover:border-primary/50",
         className,
       )}
-      style={{ borderColor: "var(--border)" }}
     >
-      <span
-        aria-hidden
-        className="mb-3 block h-[5px] w-full rounded-full"
-        style={{ backgroundColor: stripeColor }}
-      />
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <strong className="block truncate text-[15px] font-bold text-foreground">
             {job.customer}
           </strong>
-          {job.route ? (
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-              {job.route}
-            </span>
-          ) : null}
+          <span className="mt-0.5 block font-mono text-[11px] text-muted-foreground">
+            {job.jobId}
+            {job.bookingNumber ? ` · ${job.bookingNumber}` : ""}
+          </span>
         </div>
         <StatusBadge status={job.status} />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-        <span className="rounded-full bg-[#f5f3fb] px-2 py-0.5 font-semibold text-foreground">
+      {job.route ? (
+        <p className="mt-2 flex items-center gap-1 truncate text-xs text-foreground/80">
+          <MoveRight aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+          {job.route}
+        </p>
+      ) : null}
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+        <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-foreground">
           {job.shipmentType}
         </span>
-        <span className="rounded-full bg-[#f5f3fb] px-2 py-0.5 font-semibold text-foreground">
+        <span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-foreground">
           {job.serviceType}
         </span>
-        {job.bookingNumber ? (
-          <span className="rounded-full bg-[#f5f3fb] px-2 py-0.5 text-foreground">
-            {job.bookingNumber}
-          </span>
-        ) : null}
+        <PriorityBadge priority={job.priority} />
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#f0eef5] pt-3">
-        <span
-          className="text-[11px] font-bold uppercase tracking-wide"
-          style={{ color: PRIORITY_TONE[job.priority] }}
-        >
-          {job.priority}
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <PersonaAvatar name={job.owner} size="sm" />
+          <span className="truncate text-[11px] text-muted-foreground">{job.owner}</span>
         </span>
         <span
           className={cn(
-            "text-[11px] font-semibold",
-            meta.tone === "danger" && "text-[#c43850]",
-            meta.tone === "warn" && "text-[#d27b1c]",
-            meta.tone === "default" && "text-muted-foreground",
+            "shrink-0 rounded-full px-2 py-0.5 text-[11px]",
+            DEADLINE_TONE[meta.tone],
           )}
         >
           {meta.label}
         </span>
       </div>
+    </Link>
+  );
+}
+
+/**
+ * Dense single-line row for the list view on the Jobs page.
+ */
+export function JobListItem({ job, className }: JobCardItemProps): React.ReactElement {
+  const meta = deadlineMeta(job);
+
+  return (
+    <Link
+      href={`/jobs/${job.jobId}`}
+      className={cn(
+        "flex items-center gap-3 rounded-[10px] border bg-card px-3 py-2.5 transition-colors hover:border-primary/50",
+        className,
+      )}
+    >
+      <PersonaAvatar name={job.owner} size="sm" />
+      <div className="min-w-0 flex-1">
+        <strong className="block truncate text-[13px] font-semibold text-foreground">
+          {job.customer}
+        </strong>
+        <span className="block truncate font-mono text-[11px] text-muted-foreground">
+          {job.jobId}
+          {job.bookingNumber ? ` · ${job.bookingNumber}` : ""}
+          {job.route ? ` · ${job.route}` : ""}
+        </span>
+      </div>
+      <span className="hidden shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground md:inline">
+        {job.shipmentType}
+      </span>
+      <PriorityBadge priority={job.priority} className="hidden shrink-0 sm:inline-flex" />
+      <StatusBadge status={job.status} />
+      <span
+        className={cn(
+          "hidden w-44 shrink-0 truncate rounded-full px-2 py-0.5 text-right text-[11px] lg:inline-flex",
+          DEADLINE_TONE[meta.tone],
+        )}
+      >
+        {meta.label}
+      </span>
+      <ArrowRight aria-hidden className="size-4 shrink-0 text-muted-foreground" />
     </Link>
   );
 }

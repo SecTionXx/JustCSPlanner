@@ -130,7 +130,7 @@ export function ReassignControl({
                 setError(null);
               }}
               className="h-9 rounded-md border bg-white px-2 text-sm"
-              style={{ borderColor: "var(--border)" }}
+             
             >
               <option value="">— เลือก CS —</option>
               {team.map((m) => (
@@ -157,10 +157,7 @@ export function ReassignControl({
           </label>
 
           {newCsId !== "" && newCsId !== currentOwnerCsId ? (
-            <div
-              className="flex items-center gap-2 rounded-[10px] border p-2.5 text-[13px]"
-              style={{ backgroundColor: "#f5f3ff", borderColor: "#ddd6fe" }}
-            >
+            <div className="flex items-center gap-2 rounded-[10px] border border-primary/30 bg-secondary/60 p-2.5 text-[13px]">
               <PersonaAvatar name={currentOwnerName} size="sm" />
               <strong className="text-foreground">{currentOwnerName}</strong>
               <span className="text-muted-foreground" aria-hidden>

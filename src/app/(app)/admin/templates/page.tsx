@@ -22,7 +22,7 @@ export default async function TemplatesAdminPage(): Promise<React.ReactElement> 
     return (
       <>
         <PageHeader title="จัดการเทมเพลต" subtitle="Template management" />
-        <div className="px-6 pt-4 pb-8">
+        <div className="pt-4 pb-8">
           <Panel title="ไม่มีสิทธิ์เข้าถึง">
             <p className="py-4 text-center text-sm text-muted-foreground">
               หน้านี้สำหรับ Lead และ Admin เท่านั้น
@@ -52,10 +52,10 @@ export default async function TemplatesAdminPage(): Promise<React.ReactElement> 
         title="จัดการเทมเพลต"
         subtitle="รายการ To-do เริ่มต้นตามประเภทงาน — ใช้ตอนสร้าง Job Card ใหม่"
       />
-      <div className="px-6 pt-4 pb-8">
+      <div className="pt-4 pb-8">
         <div
           className="mb-4 rounded-[10px] border bg-white p-3 text-xs text-muted-foreground"
-          style={{ borderColor: "var(--border)" }}
+         
         >
           การแก้ไขเทมเพลตมีผลกับงานที่สร้างใหม่เท่านั้น — งานที่มีอยู่แล้วยังใช้ To-do เดิม
         </div>

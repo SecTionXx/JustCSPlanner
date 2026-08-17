@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -17,7 +18,8 @@ export interface ConfirmCardProps {
 
 /**
  * Reusable "AI draft → confirm" primitive (UI only, no AI logic).
- * Tinted-lavender panel with a white inner bubble and three actions.
+ * Primary-tinted panel with a card inner bubble and three actions.
+ * Implements the "AI proposes, human confirms" design rule.
  */
 export function ConfirmCard({
   title,
@@ -33,18 +35,15 @@ export function ConfirmCard({
   return (
     <div
       className={cn(
-        "rounded-[12px] border p-3.5",
+        "rounded-[12px] border border-primary/30 bg-secondary/60 p-3.5",
         className
       )}
-      style={{ backgroundColor: "#f5f3ff", borderColor: "#ddd6fe" }}
     >
-      <strong
-        className="block text-sm font-bold"
-        style={{ color: "#5937c4" }}
-      >
+      <strong className="flex items-center gap-1.5 text-sm font-bold text-primary">
+        <Sparkles aria-hidden className="size-4 shrink-0" />
         {title}
       </strong>
-      <div className="mt-2.5 rounded-[10px] bg-white px-3 py-2.5 text-[13px] leading-relaxed text-foreground">
+      <div className="mt-2.5 rounded-[10px] bg-card px-3 py-2.5 text-[13px] leading-relaxed text-card-foreground">
         {children}
       </div>
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -59,7 +58,7 @@ export function ConfirmCard({
           type="button"
           variant="ghost"
           onClick={onEdit}
-          className="h-8 rounded-[7px] px-2.5 text-xs font-bold text-[#6d28d9] hover:bg-[#eee9ff]"
+          className="h-8 rounded-[7px] px-2.5 text-xs font-bold text-primary hover:bg-secondary"
         >
           {editLabel}
         </Button>

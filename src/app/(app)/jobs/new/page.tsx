@@ -33,7 +33,7 @@ export default async function NewJobPage({
         title="สร้าง Job Card ใหม่"
         subtitle="กรอกข้อมูลแล้วระบบจะสร้าง To-do + แจ้ง CS อัตโนมัติ"
       />
-      <div className="px-6 pt-4 pb-8">
+      <div className="pt-4 pb-8">
         <Panel>
           <CreateJobForm team={team} aiEnabled={aiEnabled} initialAiText={initialAiText} />
         </Panel>

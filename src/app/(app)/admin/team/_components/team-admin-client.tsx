@@ -46,12 +46,12 @@ export function TeamAdminClient({
     <div className="flex flex-col gap-4">
       {canManage ? <AddMemberForm /> : null}
 
-      <div className="overflow-hidden rounded-[14px] border bg-white" style={{ borderColor: "var(--border)" }}>
+      <div className="overflow-hidden rounded-[14px] border bg-card">
         <table className="w-full text-sm">
           <thead>
             <tr
               className="border-b text-left text-[11px] uppercase tracking-wide text-muted-foreground"
-              style={{ borderColor: "var(--border)" }}
+             
             >
               <th className="px-3 py-2 font-semibold">สมาชิก</th>
               <th className="px-3 py-2 font-semibold">csId</th>
@@ -108,12 +108,12 @@ function AddMemberForm(): React.ReactElement {
 
   return (
     <div
-      className="flex flex-wrap items-end gap-3 rounded-[14px] border bg-white p-3"
-      style={{ borderColor: "var(--border)" }}
+      className="flex flex-wrap items-end gap-3 rounded-[14px] border bg-card p-3"
+     
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="new-displayName" className="text-xs font-bold">
-          ชื่อแสดง <span className="text-[#c43850]">*</span>
+          ชื่อแสดง <span className="text-destructive">*</span>
         </label>
         <Input
           id="new-displayName"
@@ -138,7 +138,7 @@ function AddMemberForm(): React.ReactElement {
           value={role}
           onChange={(e) => setRole(e.target.value as Role)}
           className={SELECT_CLASS}
-          style={{ borderColor: "var(--border)" }}
+         
         >
           {ROLE_OPTIONS.map((r) => (
             <option key={r.value} value={r.value}>
@@ -220,7 +220,7 @@ function MemberRow({
 
   if (!editing || !canManage) {
     return (
-      <tr className="border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
+      <tr className="border-b last:border-b-0">
         <td className="px-3 py-2">
           <div className="flex items-center gap-2">
             <PersonaAvatar name={member.displayName} size="sm" />
@@ -233,10 +233,7 @@ function MemberRow({
           <code className="rounded bg-muted px-1.5 py-0.5 text-[11px]">{member.csId}</code>
         </td>
         <td className="px-3 py-2">
-          <span
-            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-            style={{ backgroundColor: "#eee9ff", color: "#6345c3" }}
-          >
+          <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground">
             {ROLE_LABEL[member.role]}
           </span>
         </td>
@@ -248,8 +245,8 @@ function MemberRow({
             className={cn(
               "rounded-full px-2 py-0.5 text-[11px] font-bold",
               member.active
-                ? "bg-[#def7eb] text-[#177a55]"
-                : "bg-[#ffe4e8] text-[#c43850]",
+                ? "bg-status-completed-soft text-status-completed"
+                : "bg-status-blocked-soft text-destructive",
             )}
           >
             {member.active ? "ใช้งาน" : "ปิดใช้งาน"}
@@ -273,7 +270,7 @@ function MemberRow({
   }
 
   return (
-    <tr className="border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
+    <tr className="border-b last:border-b-0">
       <td className="px-3 py-2">
         <Input
           value={displayName}
@@ -289,7 +286,7 @@ function MemberRow({
           value={role}
           onChange={(e) => setRole(e.target.value as Role)}
           className="h-8 rounded-md border bg-white px-2 text-sm"
-          style={{ borderColor: "var(--border)" }}
+         
         >
           {ROLE_OPTIONS.map((r) => (
             <option key={r.value} value={r.value}>

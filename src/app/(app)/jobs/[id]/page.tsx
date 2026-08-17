@@ -1,17 +1,30 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ACTIVITY_EVENT_TH,
+  ACTIVITY_EVENT_TONE,
+} from "@/lib/labels";
 import {
   FileChips,
   PersonaAvatar,
+  PriorityBadge,
   StatusBadge,
 } from "@/components/shell";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { canEditJob } from "@/lib/auth/permissions";
 import { getRepository } from "@/lib/repository";
-import { formatDateTime, isNearDeadline, isOverdue } from "@/lib/utils";
-import type { ActivityLog } from "@/lib/types";
+import {
+  cn,
+  daysUntil,
+  formatDateTime,
+  isNearDeadline,
+  isOverdue,
+} from "@/lib/utils";
+import type { ActivityLog, JobCard } from "@/lib/types";
 
 import { Field, PageHeader, Panel } from "../../_components/field";
 import { JobCommentsClient } from "./_components/job-comments-client";
@@ -22,19 +35,11 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-const EVENT_LABELS: Record<ActivityLog["event"], string> = {
-  job_created: "สร้างงาน",
-  job_closed: "ปิดงาน",
-  status_changed: "เปลี่ยนสถานะ",
-  owner_changed: "เปลี่ยนเจ้าของงาน",
-  deadline_changed: "เปลี่ยน Deadline",
-  todo_added: "เพิ่ม To-do",
-  todo_completed: "ทำ To-do เสร็จ",
-  note_added: "เพิ่ม Note",
-  doc_added: "แนบเอกสาร",
-};
+const TAB_VALUES = ["overview", "todos", "docs", "activity"] as const;
+type TabValue = (typeof TAB_VALUES)[number];
 
 function activityBody(log: ActivityLog): string {
   switch (log.event) {
@@ -53,10 +58,36 @@ function activityBody(log: ActivityLog): string {
   }
 }
 
+function DeadlineChip({ job }: { job: JobCard }): React.ReactElement {
+  const overdue = isOverdue(job);
+  const near = isNearDeadline(job);
+  const label = overdue
+    ? `เกินกำหนด ${Math.abs(daysUntil(job.deadline))} วัน`
+    : near
+      ? `ใกล้กำหนด · ${formatDateTime(job.deadline)}`
+      : formatDateTime(job.deadline);
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+        overdue
+          ? "bg-tone-danger-soft text-tone-danger"
+          : near
+            ? "bg-tone-warning-soft text-tone-warning"
+            : "bg-muted text-muted-foreground",
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
 export default async function JobDetailPage({
   params,
+  searchParams,
 }: PageProps): Promise<React.ReactElement> {
-  const { id } = await params;
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
   const repo = getRepository();
 
   const [job, todos, activity, team, currentUser] = await Promise.all([
@@ -69,10 +100,17 @@ export default async function JobDetailPage({
 
   if (!job) notFound();
 
+  const tabParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
+  const tab: TabValue = TAB_VALUES.includes(tabParam as TabValue)
+    ? (tabParam as TabValue)
+    : "overview";
+
   const userCanEditJob = canEditJob(currentUser, job);
 
   const owner = team.find((m) => m.csId === job.owner);
   const ownerName = owner?.displayName ?? job.owner;
+  const backup = team.find((m) => m.csId === job.backup);
+  const backupName = backup?.displayName ?? job.backup;
   const teamById = new Map(team.map((m) => [m.csId, m.displayName]));
 
   const docs = (job.docLinks ?? []).map((url) => ({
@@ -97,156 +135,192 @@ export default async function JobDetailPage({
       body: a.newValue ?? "",
     }));
 
-  const deadlineTone = isOverdue(job)
-    ? "danger"
-    : isNearDeadline(job)
-      ? "warn"
-      : undefined;
-
   return (
     <>
       <PageHeader
         title={
-          <span>
-            Job Card · <span className="text-muted-foreground">{job.bookingNumber ?? job.jobId}</span>
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-base text-muted-foreground">
+              {job.jobId}
+            </span>
+            {job.bookingNumber ? (
+              <span className="font-mono text-sm text-muted-foreground">
+                · {job.bookingNumber}
+              </span>
+            ) : null}
           </span>
         }
         subtitle={`${job.customer}${job.route ? ` · ${job.route}` : ""}`}
         actions={
-          userCanEditJob ? (
+          <>
             <Button
-              render={<Link href={`/jobs/${id}/edit`} />}
-              variant="outline"
-              className="h-9 rounded-[9px] text-sm font-bold"
+              render={<Link href="/jobs" />}
+              variant="ghost"
+              className="h-9 rounded-[9px] text-sm font-semibold"
             >
-              ✎ แก้ไขงาน
+              <ArrowLeft aria-hidden className="size-4" />
+              กลับ
             </Button>
-          ) : null
+            {userCanEditJob ? (
+              <Button
+                render={<Link href={`/jobs/${id}/edit`} />}
+                variant="outline"
+                className="h-9 rounded-[9px] text-sm font-bold"
+              >
+                <Pencil aria-hidden className="size-4" />
+                แก้ไขงาน
+              </Button>
+            ) : null}
+          </>
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 px-6 pt-4 pb-8 lg:grid-cols-[1.5fr_0.75fr]">
-        {/* Left column */}
-        <div className="flex flex-col gap-4">
-          <Panel title="ข้อมูลหลัก">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-              <Field label="Job ID" value={job.jobId} />
-              <Field
-                label="สถานะ"
-                value={<StatusBadge status={job.status} />}
-              />
-              <Field label="ประเภท" value={`${job.shipmentType} · ${job.serviceType}`} />
-              <Field
-                label="Owner"
-                value={
-                  <span className="inline-flex items-center gap-1.5">
-                    <PersonaAvatar name={ownerName} size="sm" />
-                    {ownerName}
-                  </span>
-                }
-              />
-              <Field
-                label="Deadline"
-                value={
-                  <span style={deadlineTone === "danger" ? { color: "#c43850" } : deadlineTone === "warn" ? { color: "#d27b1c" } : undefined}>
-                    {formatDateTime(job.deadline)}
-                  </span>
-                }
-              />
-              <Field label="Priority" value={job.priority} />
-              {job.carrier ? <Field label="Carrier" value={job.carrier} /> : null}
-              {job.etd ? <Field label="ETD" value={formatDateTime(job.etd)} /> : null}
-              {job.eta ? <Field label="ETA" value={formatDateTime(job.eta)} /> : null}
-              {job.route ? <Field label="Route" value={job.route} /> : null}
-            </div>
-            {job.latestSummary ? (
-              <div className="mt-4 border-t border-[#f0eef5] pt-3">
-                <Field label="Note / สรุปล่าสุด" value={job.latestSummary} />
-              </div>
+      {/* Hero summary */}
+      <div className="pt-4">
+        <div className="flex flex-wrap items-center gap-2 rounded-[14px] border bg-card p-4">
+          <StatusBadge status={job.status} />
+          <PriorityBadge priority={job.priority} />
+          <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-foreground">
+            {job.shipmentType} · {job.serviceType}
+          </span>
+          <DeadlineChip job={job} />
+          <span className="ml-auto flex items-center gap-3">
+            <span className="flex items-center gap-1.5">
+              <PersonaAvatar name={ownerName} size="sm" />
+              <span className="text-xs text-muted-foreground">
+                Owner: <strong className="text-foreground">{ownerName}</strong>
+              </span>
+            </span>
+            {job.backup ? (
+              <span className="hidden items-center gap-1.5 sm:flex">
+                <PersonaAvatar name={backupName ?? job.backup} size="sm" />
+                <span className="text-xs text-muted-foreground">
+                  ผู้ช่วย: <strong className="text-foreground">{backupName}</strong>
+                </span>
+              </span>
             ) : null}
-          </Panel>
+          </span>
+        </div>
+      </div>
 
-          <Panel title="การดำเนินการ & To-do">
-            <JobDetailClient
-              jobId={job.jobId}
-              status={job.status}
-              todos={todos}
-              ownerName={ownerName}
-              team={team}
-              canManage={userCanEditJob}
-            />
-          </Panel>
+      <div className="pt-4 pb-8">
+        <Tabs defaultValue={tab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">ภาพรวม</TabsTrigger>
+            <TabsTrigger value="todos">To-do & ความคิดเห็น</TabsTrigger>
+            <TabsTrigger value="docs">เอกสาร</TabsTrigger>
+            <TabsTrigger value="activity">ประวัติกิจกรรม</TabsTrigger>
+          </TabsList>
 
-          <Panel title="ความคิดเห็น / Note">
-            <JobCommentsClient jobId={job.jobId} comments={notes} />
-          </Panel>
+          <TabsContent value="overview">
+            <Panel title="ข้อมูลหลัก">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+                <Field label="Job ID" value={<span className="font-mono">{job.jobId}</span>} />
+                <Field label="ลูกค้า" value={job.customer} />
+                <Field label="ประเภท" value={`${job.shipmentType} · ${job.serviceType}`} />
+                <Field
+                  label="Owner"
+                  value={
+                    <span className="inline-flex items-center gap-1.5">
+                      <PersonaAvatar name={ownerName} size="sm" />
+                      {ownerName}
+                    </span>
+                  }
+                />
+                <Field label="Deadline" value={formatDateTime(job.deadline)} />
+                <Field label="ความสำคัญ" value={<PriorityBadge priority={job.priority} />} />
+                {job.carrier ? <Field label="Carrier" value={job.carrier} /> : null}
+                {job.etd ? <Field label="ETD" value={formatDateTime(job.etd)} /> : null}
+                {job.eta ? <Field label="ETA" value={formatDateTime(job.eta)} /> : null}
+                {job.route ? <Field label="เส้นทาง" value={job.route} /> : null}
+              </div>
+              {job.latestSummary ? (
+                <div className="mt-4 border-t border-border pt-3">
+                  <Field label="Note / สรุปล่าสุด" value={job.latestSummary} />
+                </div>
+              ) : null}
+            </Panel>
+          </TabsContent>
 
-          {docs.length > 0 || userCanEditJob ? (
+          <TabsContent value="todos">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr]">
+              <Panel title="การดำเนินการ & To-do">
+                <JobDetailClient
+                  jobId={job.jobId}
+                  status={job.status}
+                  todos={todos}
+                  ownerName={ownerName}
+                  team={team}
+                  canManage={userCanEditJob}
+                />
+              </Panel>
+              <Panel title="ความคิดเห็น / Note">
+                <JobCommentsClient jobId={job.jobId} comments={notes} />
+              </Panel>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="docs">
             <Panel title="เอกสารแนบ">
               <div className="flex flex-wrap items-center gap-2">
                 {docs.length > 0 ? (
                   <FileChips files={docs} showUploadPill={false} />
-                ) : null}
+                ) : (
+                  <p className="text-sm text-muted-foreground">ยังไม่มีเอกสารแนบ</p>
+                )}
                 {/* Real upload → Drive; manual paste-links stay in the edit form. */}
                 {userCanEditJob ? <UploadFiles jobId={job.jobId} /> : null}
               </div>
             </Panel>
-          ) : null}
-        </div>
+          </TabsContent>
 
-        {/* Right column — activity feed */}
-        <Panel title="ประวัติกิจกรรม">
-          {recentActivity.length === 0 ? (
-            <p className="py-6 text-center text-xs text-muted-foreground">
-              ยังไม่มีกิจกรรม
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {recentActivity.map((log) => {
-                const actorName = teamById.get(log.actor) ?? log.actor;
-                return (
-                  <div
-                    key={log.logId}
-                    className="rounded-[9px] bg-[#f8f7fc] px-2.5 py-2.5 text-xs leading-relaxed text-foreground"
-                  >
-                    <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-bold text-[#6049af]">
-                      <span className="inline-flex items-center gap-1.5">
-                        <PersonaAvatar name={actorName} size="sm" />
-                        {actorName}
-                      </span>
-                      <span className="font-normal text-muted-foreground">
-                        {formatDateTime(log.timestamp)}
-                      </span>
-                    </div>
-                    <div>
-                      <strong>{EVENT_LABELS[log.event]}</strong>
-                      {log.field && log.field !== "todoId" ? (
-                        <span className="text-muted-foreground"> · {log.field}</span>
-                      ) : null}
-                      {activityBody(log) ? (
-                        <div className="mt-0.5 text-muted-foreground">
-                          {activityBody(log)}
+          <TabsContent value="activity">
+            <Panel title="ประวัติกิจกรรม">
+              {recentActivity.length === 0 ? (
+                <p className="py-6 text-center text-xs text-muted-foreground">
+                  ยังไม่มีกิจกรรม
+                </p>
+              ) : (
+                <ol className="relative space-y-4 before:absolute before:top-1 before:bottom-1 before:left-[5px] before:w-px before:bg-border">
+                  {recentActivity.map((log) => {
+                    const actorName = teamById.get(log.actor) ?? log.actor;
+                    return (
+                      <li key={log.logId} className="relative pl-6">
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "absolute top-1 left-0 size-[11px] rounded-full border-2 border-card",
+                            ACTIVITY_EVENT_TONE[log.event]
+                          )}
+                        />
+                        <div className="text-xs leading-relaxed">
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <strong className="text-[13px] text-foreground">
+                              {ACTIVITY_EVENT_TH[log.event]}
+                            </strong>
+                            <span className="text-[11px] text-muted-foreground">
+                              {actorName} · {formatDateTime(log.timestamp)}
+                            </span>
+                          </div>
+                          {activityBody(log) ? (
+                            <div className="mt-0.5 text-muted-foreground">
+                              {activityBody(log)}
+                            </div>
+                          ) : null}
+                          {log.reason ? (
+                            <div className="mt-0.5 italic text-muted-foreground">
+                              “{log.reason}”
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                      {log.reason ? (
-                        <div className="mt-0.5 italic text-muted-foreground">
-                          “{log.reason}”
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <Button
-            render={<Link href="/jobs" />}
-            variant="outline"
-            className="mt-3 h-9 w-full rounded-[9px] font-bold"
-          >
-            ← กลับไปรายการงาน
-          </Button>
-        </Panel>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </Panel>
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );

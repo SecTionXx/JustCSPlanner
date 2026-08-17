@@ -41,7 +41,7 @@ export function AddEmailForm(): React.ReactElement {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className={cn(FORM_FIELD, "sm:col-span-2")}>
         <Label htmlFor="fromAddress" className="text-xs font-bold">
-          จาก (อีเมลผู้ส่ง) <span className="text-[#c43850]">*</span>
+          จาก (อีเมลผู้ส่ง) <span className="text-destructive">*</span>
         </Label>
         <Input
           id="fromAddress"
@@ -55,7 +55,7 @@ export function AddEmailForm(): React.ReactElement {
 
       <div className={FORM_FIELD}>
         <Label htmlFor="subject" className="text-xs font-bold">
-          หัวเรื่อง <span className="text-[#c43850]">*</span>
+          หัวเรื่อง <span className="text-destructive">*</span>
         </Label>
         <Input
           id="subject"
@@ -88,7 +88,7 @@ export function AddEmailForm(): React.ReactElement {
           {pending ? "กำลังบันทึก…" : "บันทึกเข้ากล่องรับ"}
         </Button>
         {error ? (
-          <span className="text-xs font-semibold text-[#c43850]">{error}</span>
+          <span className="text-xs font-semibold text-destructive">{error}</span>
         ) : (
           <span className="text-xs text-muted-foreground">
             บันทึกแล้วระบบจะแนะนำงานที่ตรงกับเลข booking หรือชื่อลูกค้า

@@ -22,7 +22,7 @@ export interface OptionChipsProps {
 
 /**
  * Selector chips for form fields (e.g. Shipment Type FCL / LCL / Air).
- * Selected chip = lavender bg + brand text.
+ * Selected chip = primary bg + primary-foreground.
  */
 export function OptionChips({
   options,
@@ -64,17 +64,10 @@ export function OptionChips({
             onClick={() => toggle(option.value)}
             className={cn(
               "cursor-pointer rounded-[7px] border px-[9px] py-1.5 text-xs leading-none transition-colors",
-              selected ? "font-bold" : "text-foreground"
-            )}
-            style={
               selected
-                ? {
-                    backgroundColor: "#eee9ff",
-                    borderColor: "#9d87ee",
-                    color: "#5b21b6",
-                  }
-                : { borderColor: "#ddd7eb", backgroundColor: "transparent" }
-            }
+                ? "border-primary bg-secondary font-bold text-secondary-foreground"
+                : "border-input bg-transparent text-foreground hover:bg-muted"
+            )}
             aria-pressed={selected}
           >
             {option.label}

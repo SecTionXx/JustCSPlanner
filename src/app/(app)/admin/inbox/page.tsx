@@ -5,8 +5,11 @@ import { isAiEnabled } from "@/lib/ai/client";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { canViewAdmin } from "@/lib/auth/permissions";
 import { EMAIL_INBOX_STATUSES, type EmailInboxStatus } from "@/lib/enums";
+import { EMAIL_STATUS_TH } from "@/lib/labels";
 import { getRepository } from "@/lib/repository";
 import type { EmailInbox, JobCard } from "@/lib/types";
+import { Inbox } from "lucide-react";
+
 import { cn, formatDateTime } from "@/lib/utils";
 
 import { PageHeader, Panel } from "../../_components/field";
@@ -25,18 +28,11 @@ function single(value: string | string[] | undefined): string | undefined {
   return value;
 }
 
-const STATUS_LABEL: Record<EmailInboxStatus, string> = {
-  new: "ใหม่",
-  linked: "เชื่อมแล้ว",
-  converted: "แปลงเป็นงานแล้ว",
-  ignored: "ข้าม",
-};
-
-const STATUS_TONE: Record<EmailInboxStatus, string> = {
-  new: "#d27b1c",
-  linked: "#177a55",
-  converted: "#1d6fa5",
-  ignored: "#657085",
+const STATUS_CLASSES: Record<EmailInboxStatus, string> = {
+  new: "bg-status-needs-help-soft text-status-needs-help",
+  linked: "bg-status-completed-soft text-status-completed",
+  converted: "bg-status-waiting-docs-soft text-status-waiting-docs",
+  ignored: "bg-muted text-muted-foreground",
 };
 
 const SOURCE_LABEL: Record<EmailInbox["source"], string> = {
@@ -53,7 +49,7 @@ export default async function InboxPage({
     return (
       <>
         <PageHeader title="กล่องรับอีเมลเข้า" subtitle="Email inbox staging" />
-        <div className="px-6 pt-4 pb-8">
+        <div className="pt-4 pb-8">
           <Panel title="ไม่มีสิทธิ์เข้าถึง">
             <p className="py-4 text-center text-sm text-muted-foreground">
               หน้านี้สำหรับ Lead และ Admin เท่านั้น
@@ -89,10 +85,10 @@ export default async function InboxPage({
     <>
       <PageHeader
         title="กล่องรับอีเมลเข้า"
-        subtitle={`อีเมลรอดำเนินการ ${emails.length} รายการ${status ? ` · ${STATUS_LABEL[status]}` : ""}`}
+        subtitle={`อีเมลรอดำเนินการ ${emails.length} รายการ${status ? ` · ${EMAIL_STATUS_TH[status]}` : ""}`}
       />
 
-      <div className="px-6 pt-4 pb-8">
+      <div className="pt-4 pb-8">
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <Panel
             title="เพิ่มอีเมล (วางข้อความ)"
@@ -143,7 +139,7 @@ export default async function InboxPage({
               active={status === value}
               href={value === "new" ? "/admin/inbox" : `/admin/inbox?status=${value}`}
             >
-              {STATUS_LABEL[value]}
+              {EMAIL_STATUS_TH[value]}
             </StatusChip>
           ))}
         </div>
@@ -152,7 +148,12 @@ export default async function InboxPage({
           <Panel>
             {emails.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-                <span aria-hidden className="text-3xl">📥</span>
+                <span
+                  aria-hidden
+                  className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                >
+                  <Inbox className="size-6" />
+                </span>
                 <p className="text-sm font-semibold text-foreground">
                   ยังไม่มีอีเมลในกล่องรับ
                 </p>
@@ -161,10 +162,7 @@ export default async function InboxPage({
                 </p>
               </div>
             ) : (
-              <ul
-                className="flex flex-col divide-y"
-                style={{ borderColor: "var(--border)" }}
-              >
+              <ul className="flex flex-col divide-y divide-border">
                 {emails.map((email) => (
                   <EmailRow
                     key={email.emailId}
@@ -203,13 +201,10 @@ function StatusChip({
       href={href}
       className={cn(
         "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-        active ? "font-bold" : "text-[#657085] hover:bg-[#f5f3fb]",
-      )}
-      style={
         active
-          ? { backgroundColor: "#eeeaff", color: "#5b21b6" }
-          : { backgroundColor: "#f5f3fb" }
-      }
+          ? "bg-primary font-bold text-primary-foreground"
+          : "bg-muted text-muted-foreground hover:bg-secondary",
+      )}
     >
       {children}
     </Link>
@@ -227,7 +222,6 @@ function EmailRow({
   matchedJob?: JobCard;
   aiHref?: string;
 }): React.ReactElement {
-  const tone = STATUS_TONE[email.status];
   const suggestion =
     email.status === "new" ? suggestJobId(email, jobs) : undefined;
 
@@ -235,13 +229,12 @@ function EmailRow({
     <li className="flex flex-col gap-2 py-3.5">
       <div className="flex flex-wrap items-center gap-2">
         <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-          style={{ backgroundColor: `${tone}1a`, color: tone }}
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_CLASSES[email.status]}`}
         >
-          {STATUS_LABEL[email.status]}
+          {EMAIL_STATUS_TH[email.status]}
         </span>
         <span className="text-sm font-bold text-foreground">{email.subject}</span>
-        <span className="rounded-full bg-[#f5f3fb] px-2 py-0.5 text-[10px] font-semibold text-[#657085]">
+        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
           {SOURCE_LABEL[email.source]}
         </span>
         {matchedJob ? (
@@ -269,10 +262,10 @@ function EmailRow({
 
       {email.body ? (
         <details className="group">
-          <summary className="cursor-pointer list-none text-xs font-semibold text-[#5b21b6] hover:underline">
+          <summary className="cursor-pointer list-none text-xs font-semibold text-primary hover:underline">
             ดูข้อความ
           </summary>
-          <pre className="mt-1.5 max-h-56 overflow-auto whitespace-pre-wrap rounded-md bg-[#f8f7fc] p-2.5 text-xs text-foreground">
+          <pre className="mt-1.5 max-h-56 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-2.5 text-xs text-foreground">
             {email.body}
           </pre>
         </details>

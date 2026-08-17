@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+
+import { FileChips } from "@/components/shell/file-chips";
+
+describe("FileChips", () => {
+  it("renders one chip per file", () => {
+    render(
+      <FileChips
+        files={[
+          { name: "invoice.pdf" },
+          { name: "bl-scan.png", url: "https://drive.example/bl" },
+        ]}
+      />,
+    );
+    expect(screen.getByText("invoice.pdf")).toBeInTheDocument();
+    expect(screen.getByText("bl-scan.png")).toBeInTheDocument();
+  });
+
+  it("renders a link when the file has a url", () => {
+    render(<FileChips files={[{ name: "bl.png", url: "https://x/y" }]} />);
+    const link = screen.getByRole("link", { name: /bl\.png/ });
+    expect(link).toHaveAttribute("href", "https://x/y");
+    expect(link).toHaveAttribute("target", "_blank");
+  });
+
+  it("renders a span (not a link) when no url", () => {
+    render(<FileChips files={[{ name: "local.docx" }]} />);
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.getByText("local.docx").tagName).toBe("SPAN");
+  });
+
+  it("shows the default upload pill", () => {
+    render(<FileChips files={[]} />);
+    expect(screen.getByText("+ อัปโหลดไฟล์")).toBeInTheDocument();
+  });
+
+  it("supports a custom upload label and hides the pill on demand", () => {
+    const { unmount } = render(
+      <FileChips files={[]} uploadLabel="แนบไฟล์เพิ่ม" />,
+    );
+    expect(screen.getByText("แนบไฟล์เพิ่ม")).toBeInTheDocument();
+    unmount();
+
+    render(<FileChips files={[]} showUploadPill={false} />);
+    expect(screen.queryByText("+ อัปโหลดไฟล์")).not.toBeInTheDocument();
+  });
+});

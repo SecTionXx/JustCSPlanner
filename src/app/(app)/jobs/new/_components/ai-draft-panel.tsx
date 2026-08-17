@@ -17,13 +17,10 @@ const CONFIDENCE_LABELS: Record<JobDraft["confidence"], string> = {
   low: "ต่ำ",
 };
 
-const CONFIDENCE_STYLES: Record<JobDraft["confidence"], {
-  backgroundColor: string;
-  color: string;
-}> = {
-  high: { backgroundColor: "#dcfce7", color: "#166534" },
-  medium: { backgroundColor: "#fef3c7", color: "#92400e" },
-  low: { backgroundColor: "#fee2e2", color: "#991b1b" },
+const CONFIDENCE_CLASSES: Record<JobDraft["confidence"], string> = {
+  high: "bg-status-completed-soft text-status-completed",
+  medium: "bg-status-needs-help-soft text-status-needs-help",
+  low: "bg-status-blocked-soft text-status-blocked",
 };
 
 function Field({ label, value }: { label: string; value: React.ReactNode }): React.ReactElement {
@@ -92,18 +89,15 @@ export function AiDraftPanel({
   };
 
   return (
-    <div
-      className="rounded-[12px] border"
-      style={{ backgroundColor: "#faf5ff", borderColor: "#e9d5ff" }}
-    >
+    <div className="rounded-[12px] border border-primary/25 bg-secondary/40">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-2 rounded-[12px] px-3.5 py-2.5 text-left"
       >
-        <span className="text-sm font-bold" style={{ color: "#5937c4" }}>
-          ✨ ร่างจากข้อความ (AI)
+        <span className="text-sm font-bold text-primary">
+          ร่างจากข้อความ (AI)
         </span>
         <span className="text-xs font-semibold text-muted-foreground">
           {open ? "ปิด ▲" : "เปิด ▼"}
@@ -122,7 +116,7 @@ export function AiDraftPanel({
             onChange={(e) => setText(e.target.value)}
             maxLength={MAX_TEXT_LENGTH}
             placeholder={"วางข้อความที่นี่ เช่น\n\nคุณ ABC แจ้ง booking FCL BKK123 ไป Singapore ส่ง SI ก่อน 21 ส.ค. ..."}
-            className="min-h-[120px] bg-white text-sm"
+            className="min-h-[120px] bg-card text-sm"
           />
 
           <div className="flex items-center justify-between gap-2">
@@ -141,12 +135,7 @@ export function AiDraftPanel({
 
           {error ? (
             <p
-              className="rounded-[9px] border px-3 py-2 text-xs leading-relaxed"
-              style={{
-                backgroundColor: "#fef2f2",
-                borderColor: "#fecaca",
-                color: "#991b1b",
-              }}
+              className="rounded-[9px] border border-destructive/30 bg-status-blocked-soft px-3 py-2 text-xs leading-relaxed text-status-blocked"
               role="alert"
             >
               {error}
@@ -154,17 +143,13 @@ export function AiDraftPanel({
           ) : null}
 
           {draft ? (
-            <div
-              className="rounded-[12px] border p-3.5"
-              style={{ backgroundColor: "#f5f3ff", borderColor: "#ddd6fe" }}
-            >
+            <div className="rounded-[12px] border border-primary/30 bg-secondary/60 p-3.5">
               <div className="flex items-center justify-between gap-2">
-                <strong className="text-sm font-bold" style={{ color: "#5937c4" }}>
+                <strong className="text-sm font-bold text-primary">
                   ร่างจาก AI — ตรวจสอบก่อนใช้
                 </strong>
                 <span
-                  className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-                  style={CONFIDENCE_STYLES[draft.confidence]}
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${CONFIDENCE_CLASSES[draft.confidence]}`}
                 >
                   ความมั่นใจ: {CONFIDENCE_LABELS[draft.confidence]}
                 </span>
@@ -187,7 +172,7 @@ export function AiDraftPanel({
                 </div>
 
                 {draft.summary ? (
-                  <p className="mt-2 border-t pt-2" style={{ borderColor: "#ede9fe" }}>
+                  <p className="mt-2 border-t border-border pt-2">
                     {draft.summary}
                   </p>
                 ) : null}
@@ -205,14 +190,9 @@ export function AiDraftPanel({
                     {draft.missing_information.map((item) => (
                       <span
                         key={item}
-                        className="rounded-full border px-2 py-0.5 text-[11px]"
-                        style={{
-                          backgroundColor: "#fffbeb",
-                          borderColor: "#fcd34d",
-                          color: "#92400e",
-                        }}
+                        className="rounded-full border border-notice-border bg-notice-bg px-2 py-0.5 text-[11px] text-notice-text"
                       >
-                        ⚠ {item}
+                        {item}
                       </span>
                     ))}
                   </div>

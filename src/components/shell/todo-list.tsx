@@ -35,19 +35,12 @@ export function TodoList({
         {items.map((item) => (
           <div
             key={item.id}
-            className="flex items-center gap-2.5 border-t border-[#f0eef5] py-2 first:border-t-0 first:pt-0"
+            className="flex items-center gap-2.5 border-t border-border py-2 first:border-t-0 first:pt-0"
           >
             <Checkbox
               checked={item.done}
               onCheckedChange={() => onToggle?.(item.id)}
-              className={cn(
-                "size-[17px] rounded-[5px] border-2 data-checked:border-[#42bb89] data-checked:bg-[#42bb89]"
-              )}
-              style={
-                item.done
-                  ? { borderColor: "#42bb89", backgroundColor: "#42bb89" }
-                  : { borderColor: "#b8afd8" }
-              }
+              className="size-[17px] rounded-[5px] data-checked:border-status-completed data-checked:bg-status-completed"
             />
             <span
               className={cn(

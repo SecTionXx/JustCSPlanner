@@ -16,6 +16,7 @@ import {
   SHIPMENT_TYPES,
   type JobStatus,
 } from "@/lib/enums";
+import { JOB_STATUS_TH } from "@/lib/labels";
 import { getRepository } from "@/lib/repository";
 import type { ActivityLog, JobCard, TeamMember } from "@/lib/types";
 import { cn, isNearDeadline, isOverdue } from "@/lib/utils";
@@ -66,26 +67,14 @@ interface WorkloadEntry {
   active: number;
 }
 
-// --- Localized labels & tones ---
-
-const STATUS_LABELS: Record<JobStatus, string> = {
-  New: "New",
-  "In Progress": "In Progress",
-  "Waiting Customer": "รอลูกค้า",
-  "Waiting Docs": "รอเอกสาร",
-  Blocked: "ติด/Blocked",
-  "Needs Help": "ต้องการช่วยเหลือ",
-  Completed: "เสร็จแล้ว",
-};
-
 const STATUS_TONES: Record<JobStatus, string> = {
-  New: "#b6a2f4",
-  "In Progress": "#53c99b",
-  "Waiting Customer": "#fb923c",
-  "Waiting Docs": "#e0a800",
-  Blocked: "#c43850",
-  "Needs Help": "#7050d6",
-  Completed: "#9fd9f5",
+  New: "bg-status-new",
+  "In Progress": "bg-status-progress",
+  "Waiting Customer": "bg-status-waiting-customer",
+  "Waiting Docs": "bg-status-waiting-docs",
+  Blocked: "bg-status-blocked",
+  "Needs Help": "bg-status-needs-help",
+  Completed: "bg-status-completed",
 };
 
 // --- Pure computation helpers ---
@@ -142,29 +131,33 @@ interface DistBarProps {
   label: string;
   count: number;
   max: number;
-  color: string;
+  /** Tailwind fill class, e.g. "bg-status-new". */
+  fill: string;
 }
 
-function DistBar({ label, count, max, color }: DistBarProps): React.ReactElement {
+function DistBar({ label, count, max, fill }: DistBarProps): React.ReactElement {
   const pct = max > 0 ? (count / max) * 100 : 0;
+  const pctLabel = max > 0 ? `${pct.toFixed(0)}%` : "";
   return (
     <div className="flex items-center gap-3">
       <span className="w-32 shrink-0 truncate text-xs font-medium text-muted-foreground">
         {label}
       </span>
       <div
-        className="h-[22px] min-w-[60px] flex-1 overflow-hidden rounded-[6px]"
-        style={{ backgroundColor: "#f1f0f5" }}
+        className="h-2 min-w-[60px] flex-1 overflow-hidden rounded-[4px] bg-muted"
         role="img"
         aria-label={`${label}: ${count}`}
       >
         <div
-          className="h-full rounded-[6px]"
-          style={{ width: `${pct}%`, backgroundColor: color }}
+          className={cn("h-full rounded-[4px] transition-[width] duration-500", fill)}
+          style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-6 shrink-0 text-right text-xs font-bold text-foreground">
+      <span className="w-16 shrink-0 text-right font-mono text-xs text-foreground">
         {count}
+        {count > 0 ? (
+          <span className="ml-1 text-muted-foreground">{pctLabel}</span>
+        ) : null}
       </span>
     </div>
   );
@@ -186,7 +179,7 @@ export default async function ReportsPage({
           title="รายงาน SLA & คอขวด"
           subtitle="วิเคราะห์ประสิทธิภาพและงานค้างของทีม CS"
         />
-        <div className="px-6 pt-4 pb-8">
+        <div className="pt-4 pb-8">
           <Panel>
             <p className="py-10 text-center text-sm text-muted-foreground">
               ไม่มีสิทธิ์เข้าถึงหน้านี้ — สำหรับ Lead และ Admin เท่านั้น
@@ -266,7 +259,7 @@ export default async function ReportsPage({
   // --- 3. Bottleneck: distribution of active by status ---
   const statusBuckets: StatusBucket[] = ACTIVE_JOB_STATUSES.map((status) => ({
     status,
-    label: STATUS_LABELS[status],
+    label: JOB_STATUS_TH[status],
     count: activeInRange.filter((j) => j.status === status).length,
     tone: STATUS_TONES[status],
   }));
@@ -306,14 +299,9 @@ export default async function ReportsPage({
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors",
                   days === d
-                    ? "text-white"
-                    : "text-[#657085] hover:bg-[#f5f3fb] hover:text-foreground",
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-muted-foreground hover:bg-secondary hover:text-secondary-foreground",
                 )}
-                style={
-                  days === d
-                    ? { backgroundColor: "#4f46a5" }
-                    : { border: "1px solid var(--border)" }
-                }
               >
                 {d} วัน
               </Link>
@@ -323,7 +311,7 @@ export default async function ReportsPage({
       />
 
       {/* Throughput + Risk KPIs */}
-      <div className="px-6 pt-5">
+      <div className="pt-5">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <KpiCard
             label="งานเสร็จในช่วง"
@@ -338,9 +326,9 @@ export default async function ReportsPage({
             label="เวลาปิดงานเฉลี่ย"
             value={avgClose !== null ? formatDuration(avgClose) : "—"}
           />
-          <KpiCard label="Overdue" value={overdueCount} tone="danger" />
+          <KpiCard label="งานค้าง" value={overdueCount} tone="danger" />
           <KpiCard
-            label="อัตรา Overdue"
+            label="อัตรางานค้าง"
             value={`${overdueRate}%`}
             tone={overdueRate > 0 ? "danger" : "ok"}
           />
@@ -349,7 +337,7 @@ export default async function ReportsPage({
       </div>
 
       {/* Bottleneck + Workload */}
-      <div className="grid grid-cols-1 gap-4 px-6 pt-4 pb-8 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-4 pt-4 pb-8 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-4">
           <Panel title="การกระจายงาน Active ตามสถานะ">
             <div className="flex flex-col gap-2.5">
@@ -359,7 +347,7 @@ export default async function ReportsPage({
                   label={b.label}
                   count={b.count}
                   max={statusMax}
-                  color={b.tone}
+                  fill={b.tone}
                 />
               ))}
             </div>
@@ -374,7 +362,7 @@ export default async function ReportsPage({
                     label={b.label}
                     count={b.count}
                     max={serviceMax}
-                    color="#4f46a5"
+                    fill="bg-primary"
                   />
                 ))}
               </div>
@@ -388,7 +376,7 @@ export default async function ReportsPage({
                     label={b.label}
                     count={b.count}
                     max={shipmentMax}
-                    color="#7050d6"
+                    fill="bg-chart-3"
                   />
                 ))}
               </div>

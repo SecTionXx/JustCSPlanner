@@ -134,7 +134,7 @@ export default async function AssignPage({
       />
 
       {/* Workload summary */}
-      <div className="px-6 pt-5">
+      <div className="pt-5">
         <Panel title="Workload ตาม CS" actions={<WorkloadLegend />}>
           {workloads.length === 0 ? (
             <p className="py-6 text-center text-xs text-muted-foreground">
@@ -164,7 +164,7 @@ export default async function AssignPage({
       </div>
 
       {/* Filters + reassignable jobs */}
-      <div className="px-6 pt-4 pb-8">
+      <div className="pt-4 pb-8">
         <Panel
           title={`งานที่จัดสรรได้ (${filteredJobs.length})`}
           actions={

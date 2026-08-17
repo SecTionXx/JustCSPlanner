@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Paperclip, Plus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -17,7 +18,7 @@ export interface FileChipsProps {
 }
 
 /**
- * List of 📎 filename chips with a trailing upload pill.
+ * List of filename chips with a trailing upload pill.
  */
 export function FileChips({
   files,
@@ -30,9 +31,7 @@ export function FileChips({
       {files.map((file) => {
         const content = (
           <>
-            <span aria-hidden className="mr-1">
-              📎
-            </span>
+            <Paperclip aria-hidden className="mr-1 inline size-3 -translate-y-px" />
             {file.name}
           </>
         )
@@ -42,21 +41,22 @@ export function FileChips({
             href={file.url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center rounded-[7px] bg-[#f5f3fb] px-2.5 py-1 text-xs text-foreground underline-offset-2 hover:underline"
+            className="inline-flex items-center rounded-[7px] bg-muted px-2.5 py-1 text-xs text-foreground underline-offset-2 hover:underline"
           >
             {content}
           </a>
         ) : (
           <span
             key={file.name}
-            className="inline-flex items-center rounded-[7px] bg-[#f5f3fb] px-2.5 py-1 text-xs text-foreground"
+            className="inline-flex items-center rounded-[7px] bg-muted px-2.5 py-1 text-xs text-foreground"
           >
             {content}
           </span>
         )
       })}
       {showUploadPill ? (
-        <span className="inline-flex items-center rounded-[7px] border border-[#cdebd9] bg-[#e1f7ec] px-2.5 py-1 text-xs font-semibold text-[#177a55]">
+        <span className="inline-flex items-center rounded-[7px] border border-status-completed/30 bg-status-completed-soft px-2.5 py-1 text-xs font-semibold text-status-completed">
+          <Plus aria-hidden className="mr-0.5 inline size-3" />
           {uploadLabel}
         </span>
       ) : null}

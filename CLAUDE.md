@@ -25,6 +25,15 @@ npm run dev        # local dev server (http://localhost:3000)
 npm run build      # production build
 npm run start      # serve production build
 npm run lint       # eslint
+npm run test       # vitest — run all unit tests once
+npm run test:watch # vitest — watch mode
+npm run test:coverage  # vitest — run with v8 coverage report
+```
+
+Single test invocation (example):
+
+```bash
+npx vitest run src/components/shell/__tests__/status-badge.test.tsx
 ```
 
 Data layer is mock-first behind a repository interface (`src/lib/repository.ts`); the Google Sheets adapter is a later round. If a test runner is added later, document the single-test invocation here.

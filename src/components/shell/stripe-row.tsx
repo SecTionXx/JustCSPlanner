@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils"
 
 export type StripeTone = "red" | "orange" | "green" | "purple"
 
-const STRIPE_COLORS: Record<StripeTone, string> = {
-  red: "#f1687e",
-  orange: "#fb923c",
-  green: "#4fcf9b",
-  purple: "#ad8bea",
+const STRIPE_CLASSES: Record<StripeTone, string> = {
+  red: "bg-status-blocked",
+  orange: "bg-status-needs-help",
+  green: "bg-status-completed",
+  purple: "bg-status-new",
 }
 
 export interface StripeRowProps {
@@ -35,18 +35,20 @@ export function StripeRow({
   className,
 }: StripeRowProps): React.ReactElement {
   const body = (
-    <div className="flex items-center gap-2.5 py-[11px] first:pt-0 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-[#f0eff5]">
+    <div className="flex items-center gap-2.5 py-[11px] first:pt-0 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-border">
       <span
         aria-hidden
-        className="block h-[39px] w-[9px] shrink-0 rounded-[7px]"
-        style={{ backgroundColor: STRIPE_COLORS[tone] }}
+        className={cn(
+          "block h-[39px] w-[9px] shrink-0 rounded-[7px]",
+          STRIPE_CLASSES[tone]
+        )}
       />
       <div className="min-w-0 flex-1">
         <strong className="block text-sm font-semibold text-foreground">
           {title}
         </strong>
         {subtitle ? (
-          <small className="mt-[3px] block text-xs text-[#788397]">
+          <small className="mt-[3px] block text-xs text-muted-foreground">
             {subtitle}
           </small>
         ) : null}

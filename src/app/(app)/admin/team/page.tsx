@@ -15,7 +15,7 @@ export default async function TeamAdminPage(): Promise<React.ReactElement> {
     return (
       <>
         <PageHeader title="จัดการทีม" subtitle="Team management" />
-        <div className="px-6 pt-4 pb-8">
+        <div className="pt-4 pb-8">
           <Panel title="ไม่มีสิทธิ์เข้าถึง">
             <p className="py-4 text-center text-sm text-muted-foreground">
               หน้านี้สำหรับ Lead และ Admin เท่านั้น
@@ -35,7 +35,7 @@ export default async function TeamAdminPage(): Promise<React.ReactElement> {
         title="จัดการทีม"
         subtitle="เพิ่ม/แก้ไขสมาชิกทีม CS — ส่งผลต่อ dropdown ของเจ้าของงาน"
       />
-      <div className="px-6 pt-4 pb-8">
+      <div className="pt-4 pb-8">
         <TeamAdminClient team={team} canManage={canManage} />
       </div>
     </>

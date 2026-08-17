@@ -1,14 +1,24 @@
 export { AppShell, type AppShellProps, type NavItem } from "./app-shell"
+export {
+  Sidebar,
+  SidebarDrawerContent,
+  type SidebarProps,
+  type SidebarSection,
+  type SidebarNavItem,
+} from "./sidebar"
+export { TopBar, type TopBarProps, type DevUserOption } from "./top-bar"
 export { NotificationBell, type NotificationBellProps } from "./notification-bell"
+export { ThemeToggle } from "./theme-toggle"
+export { Skeleton, KpiSkeleton } from "./skeleton"
 export { KpiCard, type KpiCardProps, type KpiTone } from "./kpi-card"
 export {
   StatusBadge,
   type StatusBadgeProps,
   type StatusCategory,
-  type StatusStyle,
-  STATUS_STYLES,
+  TONE_CLASSES,
   classifyStatus,
 } from "./status-badge"
+export { PriorityBadge, type PriorityBadgeProps } from "./priority-badge"
 export { OptionChips, type OptionChipsProps, type ChipOption } from "./option-chips"
 export { StepPills, type StepPillsProps } from "./step-pills"
 export { Notice, type NoticeProps } from "./notice"

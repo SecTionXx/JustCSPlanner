@@ -60,12 +60,12 @@ export function UploadFiles({ jobId }: UploadFilesProps): React.ReactElement {
         type="button"
         disabled={pending}
         onClick={() => inputRef.current?.click()}
-        className="inline-flex items-center rounded-[7px] border border-[#cdebd9] bg-[#e1f7ec] px-2.5 py-1 text-xs font-semibold text-[#177a55] transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center rounded-[7px] border border-status-completed/30 bg-status-completed-soft px-2.5 py-1 text-xs font-semibold text-status-completed transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "กำลังอัปโหลด..." : "+ อัปโหลดไฟล์"}
       </button>
       {error ? (
-        <span className="max-w-[260px] truncate text-xs text-[#c43850]" title={error}>
+        <span className="max-w-[260px] truncate text-xs text-destructive" title={error}>
           {error}
         </span>
       ) : null}

@@ -58,7 +58,7 @@ export default async function SummaryPage(): Promise<React.ReactElement> {
     return (
       <>
         <PageHeader title="สรุปประจำวัน" subtitle="Daily summary dashboard" />
-        <div className="px-6 pt-4 pb-8">
+        <div className="pt-4 pb-8">
           <Panel title="ไม่มีสิทธิ์เข้าถึง">
             <p className="py-4 text-center text-sm text-muted-foreground">
               หน้านี้สำหรับ Lead และ Admin เท่านั้น
@@ -79,7 +79,7 @@ export default async function SummaryPage(): Promise<React.ReactElement> {
         actions={<SendTestSummaryButton />}
       />
 
-      <div className="px-6 pt-5">
+      <div className="pt-5">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
           <KpiCard label="งาน Active" value={summary.counts.totalActive} />
           <KpiCard
@@ -132,7 +132,7 @@ export default async function SummaryPage(): Promise<React.ReactElement> {
         />
       </div>
 
-      <div className="px-6 pt-4 pb-8">
+      <div className="pt-4 pb-8">
         <Panel title="ภาระงานตาม CS" actions={<WorkloadLegend />}>
           <div className="flex flex-col gap-4">
             {summary.workloads.map((w) => (

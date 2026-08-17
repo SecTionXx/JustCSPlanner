@@ -23,7 +23,7 @@ export default async function AiPage(): Promise<React.ReactElement> {
         subtitle="ถามคำถามเกี่ยวกับงานของทีม — ตอบจากข้อมูลงานล่าสุดเท่านั้น ไม่มีการเดา"
       />
 
-      <div className="px-6 pt-4 pb-8">
+      <div className="pt-4 pb-8">
         {aiEnabled ? (
           <Panel title="ผู้ช่วยตอบคำถาม">
             <QaClient currentUser={user} />
