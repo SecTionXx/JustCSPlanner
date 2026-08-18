@@ -5,10 +5,7 @@
 // Control the theme via themeState (set resolvedTheme, assert setTheme calls).
 import { vi } from "vitest";
 
-export const themeState = vi.hoisted(() => ({
-  resolvedTheme: "light" as string | undefined,
-  setTheme: vi.fn(),
-}));
+import { themeState } from "./theme-state";
 
 vi.mock("next-themes", () => ({
   useTheme: () => ({
@@ -16,3 +13,5 @@ vi.mock("next-themes", () => ({
     setTheme: themeState.setTheme,
   }),
 }));
+
+export { resetTheme, themeState } from "./theme-state";

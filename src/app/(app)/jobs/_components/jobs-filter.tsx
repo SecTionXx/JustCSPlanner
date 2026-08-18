@@ -36,8 +36,14 @@ export function JobsFilter(): React.ReactElement {
   const currentQ = params.get("q") ?? "";
   const currentSort = params.get("sort") ?? "deadline";
   const currentView = params.get("view") === "list" ? "list" : "grid";
+  // "ล้างตัวกรอง" navigates to bare /jobs, so every non-default param it
+  // clears (status/q/sort/view/page) should also make the button visible.
   const hasFilters =
-    currentStatus !== STATUS_ALL || currentQ !== "" || params.get("sort") !== null;
+    currentStatus !== STATUS_ALL ||
+    currentQ !== "" ||
+    params.get("sort") !== null ||
+    params.get("view") === "list" ||
+    params.get("page") !== null;
 
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 

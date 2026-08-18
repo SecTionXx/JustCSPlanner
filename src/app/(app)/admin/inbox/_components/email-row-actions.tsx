@@ -74,8 +74,7 @@ export function EmailRowActions({
           ref={selectRef}
           defaultValue={suggestedJobId ?? ""}
           disabled={pending || jobs.length === 0}
-          className="h-8 min-w-52 max-w-full rounded-md border bg-white px-2 text-xs"
-         
+          className="h-8 min-w-52 max-w-full rounded-md border bg-card px-2 text-xs"
           aria-label="เลือกงานที่จะเชื่อม"
         >
           <option value="" disabled>

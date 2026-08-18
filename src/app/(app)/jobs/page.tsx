@@ -128,41 +128,100 @@ export default async function JobsPage({
           </div>
         )}
 
-        {totalPages > 1 ? <Pagination current={currentPage} total={totalPages} /> : null}
+        {totalPages > 1 ? (
+          <Pagination current={currentPage} total={totalPages} params={params} />
+        ) : null}
       </div>
     </>
   );
 }
 
+/**
+ * Page numbers to render: always 1, total, and current±1, with "gap" markers
+ * where a range was skipped. Keeps the nav at ≤7 slots regardless of total.
+ */
+function pageWindow(current: number, total: number): Array<number | "gap"> {
+  const pages = new Set([1, total, current - 1, current, current + 1]);
+  const sorted = [...pages]
+    .filter((p) => p >= 1 && p <= total)
+    .sort((a, b) => a - b);
+
+  const result: Array<number | "gap"> = [];
+  for (const page of sorted) {
+    const prev = result[result.length - 1];
+    if (typeof prev === "number" && page - prev > 1) result.push("gap");
+    result.push(page);
+  }
+  return result;
+}
+
+const PAGE_LINK_CLASS =
+  "flex size-8 items-center justify-center rounded-[8px] bg-muted text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary";
+const PAGE_LINK_ACTIVE_CLASS =
+  "flex size-8 items-center justify-center rounded-[8px] bg-primary text-xs font-bold text-primary-foreground";
+
 function Pagination({
   current,
   total,
+  params,
 }: {
   current: number;
   total: number;
+  /** Raw searchParams — filters/sort/view are preserved across page links. */
+  params: Record<string, string | string[] | undefined>;
 }): React.ReactElement {
+  const pageHref = (page: number): string => {
+    const sp = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      const v = single(value);
+      if (v !== undefined) sp.set(key, v);
+    }
+    sp.set("page", String(page));
+    return `/jobs?${sp.toString()}`;
+  };
+
+  const step = (
+    page: number,
+    label: string,
+    arrow: string,
+    disabled: boolean,
+    key: string,
+  ): React.ReactElement =>
+    disabled ? (
+      <span
+        key={key}
+        aria-disabled="true"
+        aria-label={label}
+        className={`${PAGE_LINK_CLASS} pointer-events-none opacity-50`}
+      >
+        {arrow}
+      </span>
+    ) : (
+      <Link key={key} href={pageHref(page)} aria-label={label} className={PAGE_LINK_CLASS}>
+        {arrow}
+      </Link>
+    );
+
   return (
     <nav aria-label="แบ่งหน้า" className="mt-6 flex items-center justify-center gap-2">
-      {Array.from({ length: total }).map((_, i) => {
-        const page = i + 1;
-        const sp = new URLSearchParams(globalThis.location?.search ?? "");
-        sp.set("page", String(page));
-        const qs = sp.toString();
-        return (
+      {step(current - 1, "หน้าก่อนหน้า", "‹", current <= 1, "prev")}
+      {pageWindow(current, total).map((item, i) =>
+        item === "gap" ? (
+          <span key={`gap-${i}`} className="px-0.5 text-xs text-muted-foreground">
+            …
+          </span>
+        ) : (
           <Link
-            key={page}
-            href={qs ? `/jobs?${qs}` : "/jobs"}
-            aria-current={page === current ? "page" : undefined}
-            className={
-              page === current
-                ? "flex size-8 items-center justify-center rounded-[8px] bg-primary text-xs font-bold text-primary-foreground"
-                : "flex size-8 items-center justify-center rounded-[8px] bg-muted text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary"
-            }
+            key={item}
+            href={pageHref(item)}
+            aria-current={item === current ? "page" : undefined}
+            className={item === current ? PAGE_LINK_ACTIVE_CLASS : PAGE_LINK_CLASS}
           >
-            {page}
+            {item}
           </Link>
-        );
-      })}
+        ),
+      )}
+      {step(current + 1, "หน้าถัดไป", "›", current >= total, "next")}
     </nav>
   );
 }

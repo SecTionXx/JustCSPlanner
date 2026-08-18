@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/shell";
 import type { JobDraft } from "@/lib/ai/schema";
+import { SHIPMENT_TYPES } from "@/lib/enums";
 import type { JobStatus, ServiceType, ShipmentType } from "@/lib/enums";
 import type { TeamMember } from "@/lib/types";
 
@@ -75,7 +76,7 @@ function toDatetimeLocal(raw: string): string {
 /** Only accept values that exist in the system enum; otherwise leave unset. */
 function matchShipmentType(value: string): ShipmentType | null {
   const trimmed = value.trim();
-  return (["FCL", "LCL", "Air"] as readonly string[]).includes(trimmed)
+  return (SHIPMENT_TYPES as readonly string[]).includes(trimmed)
     ? (trimmed as ShipmentType)
     : null;
 }
@@ -135,12 +136,12 @@ export function CreateJobForm({
   const [values, setValues] = React.useState<JobFormValues>(INITIAL_VALUES);
 
   // Hidden mirror inputs for fields managed by chips (create form posts via
-  // FormData to the createJob server action).
+  // FormData to the createJob server action). serviceType is a native select
+  // and submits itself via name="serviceType" in JobFormFields.
   const hidden: Partial<Record<keyof JobFormValues, string>> = {
     status: values.status,
     shipmentType: values.shipmentType,
     priority: values.priority,
-    serviceType: values.serviceType,
   };
 
   // Deep-link (?aiText=): the textarea keeps the text as its own state, so

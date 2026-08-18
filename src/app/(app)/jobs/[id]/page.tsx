@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ACTIVITY_EVENT_TH,
   ACTIVITY_EVENT_TONE,
@@ -29,6 +29,7 @@ import type { ActivityLog, JobCard } from "@/lib/types";
 import { Field, PageHeader, Panel } from "../../_components/field";
 import { JobCommentsClient } from "./_components/job-comments-client";
 import { JobDetailClient } from "./_components/job-detail-client";
+import { JOB_TAB_VALUES, JobTabs, type JobTabValue } from "./_components/job-tabs";
 import { UploadFiles } from "./_components/upload-files";
 
 export const dynamic = "force-dynamic";
@@ -37,9 +38,6 @@ interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
-
-const TAB_VALUES = ["overview", "todos", "docs", "activity"] as const;
-type TabValue = (typeof TAB_VALUES)[number];
 
 function activityBody(log: ActivityLog): string {
   switch (log.event) {
@@ -101,8 +99,8 @@ export default async function JobDetailPage({
   if (!job) notFound();
 
   const tabParam = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
-  const tab: TabValue = TAB_VALUES.includes(tabParam as TabValue)
-    ? (tabParam as TabValue)
+  const tab: JobTabValue = JOB_TAB_VALUES.includes(tabParam as JobTabValue)
+    ? (tabParam as JobTabValue)
     : "overview";
 
   const userCanEditJob = canEditJob(currentUser, job);
@@ -204,7 +202,7 @@ export default async function JobDetailPage({
       </div>
 
       <div className="pt-4 pb-8">
-        <Tabs defaultValue={tab}>
+        <JobTabs tab={tab}>
           <TabsList className="mb-4">
             <TabsTrigger value="overview">ภาพรวม</TabsTrigger>
             <TabsTrigger value="todos">To-do & ความคิดเห็น</TabsTrigger>
@@ -320,7 +318,7 @@ export default async function JobDetailPage({
               )}
             </Panel>
           </TabsContent>
-        </Tabs>
+        </JobTabs>
       </div>
     </>
   );

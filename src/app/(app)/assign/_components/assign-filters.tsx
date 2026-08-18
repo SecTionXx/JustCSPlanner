@@ -50,8 +50,7 @@ export function AssignFilters({ team }: AssignFiltersProps): React.ReactElement 
       <select
         value={currentOwner}
         onChange={(e) => navigate({ owner: e.target.value })}
-        className="h-8 rounded-md border bg-white px-2 text-[13px]"
-       
+        className="h-8 rounded-md border bg-card px-2 text-[13px]"
         aria-label="กรองตามเจ้าของงาน"
       >
         <option value="">เจ้าของ: ทั้งหมด</option>

@@ -129,8 +129,7 @@ export function ReassignControl({
                 setNewCsId(e.target.value);
                 setError(null);
               }}
-              className="h-9 rounded-md border bg-white px-2 text-sm"
-             
+              className="h-9 rounded-md border bg-card px-2 text-sm"
             >
               <option value="">— เลือก CS —</option>
               {team.map((m) => (
