@@ -1,4 +1,5 @@
 import * as React from "react"
+import Link from "next/link"
 
 import { cn } from "@/lib/utils"
 
@@ -54,12 +55,12 @@ export function KpiCard({
 
   if (href) {
     return (
-      <a
+      <Link
         href={href}
         className="block rounded-[14px] focus-visible:outline-2 focus-visible:outline-ring"
       >
         {body}
-      </a>
+      </Link>
     )
   }
 

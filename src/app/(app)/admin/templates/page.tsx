@@ -54,8 +54,7 @@ export default async function TemplatesAdminPage(): Promise<React.ReactElement> 
       />
       <div className="pt-4 pb-8">
         <div
-          className="mb-4 rounded-[10px] border bg-white p-3 text-xs text-muted-foreground"
-         
+          className="mb-4 rounded-[10px] border bg-card p-3 text-xs text-muted-foreground"
         >
           การแก้ไขเทมเพลตมีผลกับงานที่สร้างใหม่เท่านั้น — งานที่มีอยู่แล้วยังใช้ To-do เดิม
         </div>

@@ -30,6 +30,28 @@ describe("FileChips", () => {
     expect(screen.getByText("local.docx").tagName).toBe("SPAN");
   });
 
+  it("renders a span (not a link) for non-http schemes", () => {
+    render(
+      <FileChips
+        files={[
+          { name: "evil.pdf", url: "javascript:alert(1)" },
+          { name: "data.txt", url: "data:text/html,hi" },
+        ]}
+      />,
+    );
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.getByText("evil.pdf").tagName).toBe("SPAN");
+    expect(screen.getByText("data.txt").tagName).toBe("SPAN");
+  });
+
+  it("still links site-relative urls", () => {
+    render(
+      <FileChips files={[{ name: "internal.pdf", url: "/files/internal.pdf" }]} />,
+    );
+    const link = screen.getByRole("link", { name: /internal\.pdf/ });
+    expect(link).toHaveAttribute("href", "/files/internal.pdf");
+  });
+
   it("shows the default upload pill", () => {
     render(<FileChips files={[]} />);
     expect(screen.getByText("+ อัปโหลดไฟล์")).toBeInTheDocument();

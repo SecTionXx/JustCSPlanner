@@ -18,6 +18,17 @@ export interface FileChipsProps {
 }
 
 /**
+ * Only http(s) and site-relative URLs become links — a chip whose URL came
+ * from stored data (docLinks, attachments) must never be a javascript:/data:
+ * vector once the data source is user-controlled (Sheets adapter).
+ */
+const SAFE_URL_RE = /^(https?:\/\/|\/)/i
+
+function isSafeUrl(url: string): boolean {
+  return SAFE_URL_RE.test(url.trim())
+}
+
+/**
  * List of filename chips with a trailing upload pill.
  */
 export function FileChips({
@@ -35,7 +46,7 @@ export function FileChips({
             {file.name}
           </>
         )
-        return file.url ? (
+        return file.url && isSafeUrl(file.url) ? (
           <a
             key={file.name}
             href={file.url}

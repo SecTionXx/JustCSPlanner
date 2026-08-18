@@ -155,7 +155,7 @@ export function AiDraftPanel({
                 </span>
               </div>
 
-              <div className="mt-2.5 rounded-[10px] bg-white px-3 py-2.5 text-[13px] leading-relaxed text-foreground">
+              <div className="mt-2.5 rounded-[10px] bg-card px-3 py-2.5 text-[13px] leading-relaxed text-foreground">
                 <div className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
                   <Field label="ลูกค้า" value={draft.customer} />
                   <Field label="Booking No." value={draft.booking_number} />

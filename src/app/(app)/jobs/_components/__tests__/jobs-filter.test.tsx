@@ -84,6 +84,20 @@ describe("JobsFilter — clear button", () => {
     expect(screen.queryByRole("button", { name: /ล้างตัวกรอง/ })).toBeNull();
   });
 
+  it("is visible when only view=list is set", () => {
+    setup("view=list");
+    expect(
+      screen.getByRole("button", { name: /ล้างตัวกรอง/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("is visible when only a page param is set", () => {
+    setup("page=3");
+    expect(
+      screen.getByRole("button", { name: /ล้างตัวกรอง/ }),
+    ).toBeInTheDocument();
+  });
+
   it("resets to /jobs when filters are active", async () => {
     const user = await importUser();
     setup("status=New");

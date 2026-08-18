@@ -32,7 +32,7 @@ const ROLE_LABEL: Record<Role, string> = {
   admin: "Admin",
 };
 
-const SELECT_CLASS = "h-9 rounded-md border bg-white px-2.5 text-sm";
+const SELECT_CLASS = "h-9 rounded-md border bg-card px-2.5 text-sm";
 
 export function TeamAdminClient({
   team,
@@ -285,8 +285,7 @@ function MemberRow({
         <select
           value={role}
           onChange={(e) => setRole(e.target.value as Role)}
-          className="h-8 rounded-md border bg-white px-2 text-sm"
-         
+          className="h-8 rounded-md border bg-card px-2 text-sm"
         >
           {ROLE_OPTIONS.map((r) => (
             <option key={r.value} value={r.value}>

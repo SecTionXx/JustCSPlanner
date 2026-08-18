@@ -43,8 +43,7 @@ function TemplateGroupTable({
 }): React.ReactElement {
   return (
     <section
-      className="overflow-hidden rounded-[14px] border bg-white"
-     
+      className="overflow-hidden rounded-[14px] border bg-card"
     >
       <header
         className="flex items-center justify-between gap-2 border-b px-3 py-2"

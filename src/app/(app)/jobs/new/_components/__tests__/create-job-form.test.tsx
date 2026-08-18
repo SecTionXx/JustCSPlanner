@@ -96,7 +96,12 @@ describe("CreateJobForm", () => {
     expect(hidden("status")?.value).toBe("New");
     expect(hidden("shipmentType")?.value).toBe("FCL");
     expect(hidden("priority")?.value).toBe("Normal");
-    expect(hidden("serviceType")?.value).toBe("Export Sea");
+    // serviceType has no hidden mirror — the native select submits itself
+    // via name="serviceType" (exactly one FormData entry, no duplicates).
+    expect(hidden("serviceType")).toBeUndefined();
+    const serviceSelect = screen.getByLabelText("Service Type");
+    expect(serviceSelect).toHaveValue("Export Sea");
+    expect(serviceSelect).toHaveAttribute("name", "serviceType");
 
     await user.click(screen.getByRole("button", { name: "Air" }));
     await user.click(screen.getByRole("button", { name: "ด่วน" }));
